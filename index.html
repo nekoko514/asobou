@@ -6,44 +6,56 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="あそぼう">
+<meta name="theme-color" content="#fbf5ea">
 <title>あそぼう</title>
+<!-- 丸くて太さのある文字（読みこめないときは端末の丸ゴシックになる） -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap">
 <style>
   :root {
-    --bg: #f7f4ee;
+    color-scheme: light; /* 子ども向けのため、ダークモードでも配色を固定する（コントラストと予測可能性を優先） */
+    --bg: #fbf5ea;
     --card: #ffffff;
-    --ink: #2e2a24;
-    --ink-soft: #6b6157;
-    --line: #e2dbd0;
-    --accent: #5b8c6e;
-    --accent-soft: #e6efe8;
-    --warm: #d89a58;
-    --shadow: 0 2px 10px rgba(46,42,36,.08);
+    --ink: #3b3129;
+    --ink-soft: #7a6d60;
+    --line: #ece2d3;
+    --edge: #e7dac6;          /* 白いボタンの下のふち（押せるおもちゃの厚み） */
+    --accent: #3fae78;
+    --accent-soft: #e2f6e9;
+    --accent-edge: #2f8f60;
+    --warm: #f2a03d;
+    --star-off: #eadfcd;
+    --shadow: 0 12px 24px rgba(59,49,41,.08);
     --shape: #4f86c6;
     --k: 1; /* 絵の大きさの倍率。小さい画面では下で縮める */
   }
   @media (max-width: 520px), (max-height: 700px) { :root { --k: .74; } }
-  :root:not([data-theme="light"]) {
-    @media (prefers-color-scheme: dark) {
-      --bg: #f7f4ee;
-      --card: #ffffff;
-      --ink: #2e2a24;
-    }
-  }
-  /* 子ども向けのため、ダークモードでも配色を固定する（コントラストと予測可能性を優先） */
+  @media (max-height: 500px) { :root { --k: .6; } } /* 横向きのスマホなど、とても背の低い画面 */
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+  html { background: var(--bg); }
   html, body {
     margin: 0; padding: 0;
-    background: var(--bg);
     color: var(--ink);
-    font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", system-ui, -apple-system, sans-serif;
+    font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", system-ui, -apple-system, sans-serif;
+    font-weight: 500;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
     touch-action: manipulation;
     /* 長押しで文字選択やメニューが出ないように（入力欄だけは選択できるよう下で戻す） */
     -webkit-user-select: none; user-select: none;
     -webkit-touch-callout: none;
+  }
+  /* 四すみに うすい色のぼかしを置いた、やわらかい背景（動かない） */
+  body {
+    background:
+      radial-gradient(45vmax 45vmax at 0% 0%, rgba(255, 205, 184, .45), transparent 70%),
+      radial-gradient(40vmax 40vmax at 100% 0%, rgba(190, 226, 255, .5), transparent 70%),
+      radial-gradient(45vmax 45vmax at 100% 100%, rgba(196, 237, 207, .5), transparent 70%),
+      radial-gradient(40vmax 40vmax at 0% 100%, rgba(255, 234, 166, .45), transparent 70%),
+      var(--bg);
   }
 
   /* 画面の高さに固定し、長いリストは各画面の中でスクロールさせる（もどるボタンが常に見える） */
@@ -56,27 +68,58 @@
   }
 
   .screen { display: none; flex: 1; flex-direction: column; min-height: 0; }
-  .screen.on { display: flex; }
+  .screen.on { display: flex; animation: screen-in .28s ease-out; }
+  @keyframes screen-in { from { opacity: 0; translate: 0 10px; } }
 
   /* ---------- ホーム ---------- */
   .home-wrap {
     flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 28px;
+    align-items: center; justify-content: center; gap: clamp(16px, 3.5vh, 28px);
   }
+  /* ロゴ：1文字ずつ色をかえて、少しかたむけたシール風 */
+  .logo {
+    margin: 0 0 clamp(0px, 2vh, 16px); display: flex; gap: .04em;
+    font-size: clamp(3rem, min(13vw, 12vh), 5.4rem); font-weight: 800; line-height: 1.15;
+  }
+  .logo span {
+    display: inline-block;
+    text-shadow: 3px 0 #fff, -3px 0 #fff, 0 3px #fff, 0 -3px #fff,
+                 2px 2px #fff, -2px 2px #fff, 2px -2px #fff, -2px -2px #fff,
+                 0 7px 0 rgba(59,49,41,.12);
+  }
+  .logo span:nth-child(1) { color: #ef6b5b; rotate: -8deg; }
+  .logo span:nth-child(2) { color: #f4b23a; rotate: 5deg; translate: 0 -6px; }
+  .logo span:nth-child(3) { color: #4cb47c; rotate: -4deg; }
+  .logo span:nth-child(4) { color: #5b8fe0; rotate: 7deg; translate: 0 -4px; }
+
+  /* 押すと沈む、おもちゃのようなボタン（下のふちが厚み） */
   .big-btn {
+    --c1: var(--card); --c2: var(--edge);
     width: min(420px, 86vw);
-    padding: 34px 20px;
-    border: none; border-radius: 28px;
-    background: var(--card);
-    box-shadow: var(--shadow);
-    font-size: 2rem; font-weight: 700; color: var(--ink);
+    padding: 24px 20px;
+    border: none; border-radius: 32px;
+    background: var(--c1);
+    box-shadow: 0 8px 0 var(--c2), 0 16px 28px rgba(59,49,41,.10);
+    font-size: 2rem; font-weight: 800; color: var(--ink);
     font-family: inherit;
     display: flex; align-items: center; justify-content: center; gap: 18px;
     cursor: pointer;
-    transition: transform .12s ease;
+    transition: transform .1s ease, box-shadow .1s ease;
   }
-  .big-btn:active { transform: scale(.97); }
-  .big-btn .ico { font-size: 2.6rem; line-height: 1; }
+  .big-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 var(--c2), 0 6px 14px rgba(59,49,41,.10); }
+  .big-btn.play { --c1: #d8f3e2; --c2: #9ed5b5; }
+  .big-btn.today { --c1: #ffe5d0; --c2: #f2b98d; }
+  .big-btn.next { --c1: #d8f3e2; --c2: #9ed5b5; width: min(320px, 80vw); padding: 18px 20px; font-size: 1.7rem; }
+  .big-btn .ico {
+    font-size: 2.2rem; line-height: 1;
+    width: 1.8em; height: 1.8em; border-radius: 50%; flex: none;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,.9); box-shadow: inset 0 -4px 0 rgba(59,49,41,.06);
+  }
+  @media (max-height: 520px) {
+    .big-btn { padding: 12px 20px; }
+    .big-btn .ico { font-size: 1.7rem; }
+  }
 
   /* ---------- 共通ヘッダ ---------- */
   .bar {
@@ -84,91 +127,128 @@
     gap: 12px; margin-bottom: 18px; min-height: 56px;
   }
   .back {
-    border: none; background: var(--card); box-shadow: var(--shadow);
-    border-radius: 18px; padding: 14px 22px;
-    font-size: 1.25rem; font-family: inherit; color: var(--ink);
-    cursor: pointer;
+    border: none; background: var(--card); color: var(--ink);
+    border-radius: 20px; padding: 12px 22px;
+    font-size: 1.2rem; font-weight: 700; font-family: inherit; cursor: pointer;
+    box-shadow: 0 5px 0 var(--edge), 0 8px 16px rgba(59,49,41,.06);
+    transition: transform .1s ease, box-shadow .1s ease;
   }
-  .back:active { transform: scale(.96); }
+  .back:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--edge); }
 
-  .dots { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
-  .dots.many { gap: 7px; }
-  .dots.many .dot { width: 14px; height: 14px; }
+  /* 進みぐあいの星（あと いくつか が目で見える）。星の形は clip-path で切りぬく */
+  .dots { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
   .dot {
-    width: 18px; height: 18px; border-radius: 50%;
-    background: var(--line);
-    transition: background .2s ease;
+    width: 28px; height: 28px; background: var(--star-off);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
   }
-  .dot.done { background: var(--accent); }
+  .dot.done { background: linear-gradient(#ffd766, #ffb21e); }
+  .dot.just { animation: star-pop .5s ease-out; }
+  @keyframes star-pop { 0% { scale: .3; } 60% { scale: 1.35; } 100% { scale: 1; } }
+  .dots.many { gap: 3px; }
+  .dots.many .dot { width: 22px; height: 22px; }
 
   /* ---------- 課題メニュー ---------- */
   .menu-grid {
     display: grid; grid-template-columns: repeat(2, 1fr);
-    gap: 14px; align-content: start;
+    gap: 16px 14px; align-content: start; padding-bottom: 6px;
   }
-  @media (min-width: 700px) { .menu-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
+  @media (min-width: 700px) { .menu-grid { grid-template-columns: repeat(3, 1fr); gap: 22px 18px; } }
   @media (min-width: 1000px) { .menu-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 1100px) { .menu-grid { grid-template-columns: repeat(5, 1fr); } }
+  /* 色は あそびごとに JS で --c1（面）--c2（ふち）を入れる */
   .menu-card {
-    border: none; border-radius: 24px; background: var(--card);
-    box-shadow: var(--shadow); padding: 24px 10px;
+    --c1: var(--card); --c2: var(--edge);
+    border: none; border-radius: 28px; background: var(--c1);
+    box-shadow: 0 6px 0 var(--c2), 0 12px 22px rgba(59,49,41,.07);
+    padding: 18px 10px 16px;
     font-family: inherit; color: var(--ink); cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    transition: transform .1s ease, box-shadow .1s ease;
   }
-  .menu-card:active { transform: scale(.97); }
-  .menu-card .ico { font-size: 3rem; line-height: 1; }
+  .menu-card:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--c2), 0 6px 12px rgba(59,49,41,.07); }
+  .menu-card .ico {
+    font-size: 2.2rem; line-height: 1;
+    width: 1.8em; height: 1.8em; border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,.88); box-shadow: inset 0 -4px 0 rgba(59,49,41,.06);
+  }
   /* 「おおきい ちいさい」が「ちい／さい」のように途中で切れないよう、空白でだけ折り返す */
-  .menu-card .label { font-size: 1.25rem; font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
+  .menu-card .label { font-size: 1.2rem; font-weight: 800; text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
   @media (min-width: 700px) {
-    .menu-card { padding: 30px 14px; }
-    .menu-card .ico { font-size: 3.2rem; }
-    .menu-card .label { font-size: 1.45rem; }
+    .menu-card { padding: 22px 12px 18px; }
+    .menu-card .ico { font-size: 2.4rem; width: 1.75em; height: 1.75em; }
+    .menu-card .label { font-size: 1.35rem; }
   }
 
   /* ---------- 課題画面 ---------- */
+  .task-body { display: flex; flex-direction: column; }
+  /* お題：白いラベル */
   .prompt {
-    text-align: center; font-size: clamp(2rem, min(5vw, 6vh), 2.8rem);
-    font-weight: 700; margin: 10px 0 28px; letter-spacing: .04em;
+    align-self: center; max-width: 100%;
+    text-align: center; font-size: clamp(1.9rem, min(5vw, 6vh), 2.6rem);
+    font-weight: 800; margin: 6px 0 26px; padding: .2em 1em .25em; letter-spacing: .04em;
+    background: var(--card); border-radius: 999px;
+    box-shadow: 0 5px 0 var(--edge), 0 10px 20px rgba(59,49,41,.06);
     word-break: keep-all; overflow-wrap: anywhere;
   }
   /* 背の低い画面（横向きのスマホなど）では余白をつめて、スクロールなしで収める */
-  @media (max-height: 700px) { .prompt { margin: 4px 0 16px; } }
-  .task-body { display: flex; flex-direction: column; }
-  /* おなじ・かげ の見本。押せる選択肢と区別できるよう、点線の枠だけにする */
+  @media (max-height: 700px) { .prompt { margin: 2px 0 16px; } }
+  /* おなじ・かげ の見本。押せる選択肢と区別できるよう、点線の枠にする */
   .sample {
     display: none; align-self: center;
-    margin: -10px 0 22px; padding: calc(var(--k) * 14px) calc(var(--k) * 30px);
-    border: 3px dashed var(--line); border-radius: 26px;
+    margin: -8px 0 22px; padding: calc(var(--k) * 14px) calc(var(--k) * 30px);
+    background: rgba(255,255,255,.6); border: 3px dashed #d8c9b2; border-radius: 26px;
   }
   .sample.on { display: block; }
   .sample .emo { line-height: 1; display: block; }
+  /* 横向きのスマホなど とても背の低い画面では、見本を選択肢の左にならべる */
+  @media (max-height: 500px) {
+    #task-body { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto 1fr; align-items: center; }
+    #task-body .prompt { grid-column: 1 / -1; justify-self: center; }
+    #task-body .sample { margin: 0 0 24px 8px; }
+    #task-body .choices { grid-column: 2; }
+  }
   .choices {
     flex: 1 0 auto;
     display: flex; flex-wrap: wrap;
     align-items: center; justify-content: center; align-content: center;
     gap: clamp(16px, 4vw, 40px);
-    padding-bottom: 20px;
+    padding: 4px 0 24px;
   }
   .choice {
-    border: 3px solid transparent; background: var(--card);
-    border-radius: 28px; box-shadow: var(--shadow);
+    border: 4px solid transparent; background: var(--card);
+    border-radius: 30px; box-shadow: 0 6px 0 var(--edge), 0 12px 24px rgba(59,49,41,.07);
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; padding: calc(var(--k) * 18px);
+    cursor: pointer; padding: calc(var(--k) * 16px);
     min-width: calc(var(--k) * 150px); min-height: calc(var(--k) * 150px);
-    transition: opacity .3s ease, border-color .2s ease, transform .12s ease;
     font-family: inherit;
+    animation: choice-in .35s ease-out backwards;
+    transition: opacity .3s ease, border-color .2s ease, background-color .2s ease, transform .1s ease, box-shadow .1s ease;
   }
-  .choice:active { transform: scale(.97); }
+  /* 問題が出るたびに、選択肢が順に ふわっと出る */
+  .choice:nth-child(2) { animation-delay: .06s; }
+  .choice:nth-child(3) { animation-delay: .12s; }
+  @keyframes choice-in { from { opacity: 0; scale: .8; } }
+  .choice:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--edge), 0 6px 12px rgba(59,49,41,.07); }
   .choice .emo { line-height: 1; display: block; }
-  .choice.word { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 700; color: var(--ink); }
-  .choice.dim { opacity: .22; pointer-events: none; }
+  .choice.dim { opacity: .25; pointer-events: none; }
   .choice.hint { border-color: var(--warm); }
-  .choice.right { border-color: var(--accent); background: var(--accent-soft); } /* ヒントの枠より正解の色を優先 */
-
-  .swatch {
-    display: block; width: calc(var(--k) * 110px); height: calc(var(--k) * 110px);
-    border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(0,0,0,.06);
+  /* ヒントの枠より正解の色を優先 */
+  .choice.right {
+    border-color: var(--accent); background: var(--accent-soft);
+    box-shadow: 0 6px 0 var(--accent-edge), 0 12px 26px rgba(63,174,120,.25);
   }
-  .shape { display: block; width: calc(var(--k) * 110px); height: calc(var(--k) * 110px); fill: var(--shape); }
+
+  /* いろ：つやのある玉（色は JS で background-color に入れる） */
+  .swatch {
+    display: block; width: calc(var(--k) * 110px); height: calc(var(--k) * 110px); border-radius: 50%;
+    background-image: radial-gradient(circle at 34% 28%, rgba(255,255,255,.65), rgba(255,255,255,0) 40%);
+    box-shadow: inset 0 -8px 14px rgba(0,0,0,.14), 0 4px 8px rgba(0,0,0,.08);
+  }
+  .shape {
+    display: block; width: calc(var(--k) * 110px); height: calc(var(--k) * 110px);
+    fill: var(--shape); filter: drop-shadow(0 4px 3px rgba(0,0,0,.12));
+  }
   /* かげ：絵文字を黒く塗りつぶしてシルエットにする。正解すると色が戻る */
   .sil { filter: brightness(0); opacity: .75; transition: filter .4s ease, opacity .4s ease; }
   .choice.right .sil { filter: none; opacity: 1; }
@@ -180,29 +260,66 @@
   /* ---------- おわり ---------- */
   .finish {
     flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 24px;
+    align-items: center; justify-content: center; gap: clamp(16px, 3vh, 26px);
   }
-  .finish .mark { font-size: 5rem; }
-  .finish .txt { font-size: 2.2rem; font-weight: 700; }
+  /* あつめた星が、ひとつずつ ぽんと出る（数えるための星で、点数ではない） */
+  .stars { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .stars .dot { width: calc(var(--k) * 64px); height: calc(var(--k) * 64px); animation: star-pop .5s ease-out backwards; }
+  .stars.many { gap: 6px; }
+  .stars.many .dot { width: calc(var(--k) * 44px); height: calc(var(--k) * 44px); }
+  .finish .txt { font-size: 2.4rem; font-weight: 800; }
 
-  /* ---------- しゃぼんだま ---------- */
+  /* ---------- しゃぼんだま・ふうせん ---------- */
   .pond {
-    position: relative; flex: 1; min-height: 0; overflow: hidden;
-    border-radius: 28px; background: linear-gradient(180deg, #e8f1f3, #f7f4ee);
+    position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: 30px;
+    background:
+      radial-gradient(70px 26px at 16% 20%, rgba(255,255,255,.95), transparent 70%),
+      radial-gradient(100px 36px at 22% 24%, rgba(255,255,255,.8), transparent 70%),
+      radial-gradient(90px 30px at 80% 13%, rgba(255,255,255,.9), transparent 70%),
+      radial-gradient(60px 22px at 86% 17%, rgba(255,255,255,.85), transparent 70%),
+      linear-gradient(180deg, #cdeaf8 0%, #e6f5f3 62%, #f7f1e3 100%);
+    box-shadow: inset 0 0 0 4px rgba(255,255,255,.7), 0 10px 24px rgba(59,49,41,.06);
   }
+  .popper {
+    position: absolute; padding: 0; border: none; background: none; cursor: pointer;
+    transition: transform .25s ease, opacity .25s ease;
+  }
+  .popper.new { transform: scale(.3); opacity: 0; }
+  .popper.pop { transform: scale(1.35); opacity: 0; pointer-events: none; animation-play-state: paused; }
   .bubble {
-    position: absolute; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+    border-radius: 50%;
     background:
       radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 20%),
       radial-gradient(circle, hsla(var(--h), 85%, 80%, .22) 0 50%, hsla(var(--h), 75%, 58%, .72) 100%);
     box-shadow: inset 0 0 0 3px hsla(var(--h), 70%, 55%, .55), 0 6px 18px rgba(46,42,36,.08);
     animation: bob 3.2s ease-in-out infinite alternate;
-    transition: transform .28s ease, opacity .28s ease;
   }
-  .bubble.new { transform: scale(.3); opacity: 0; }
-  .bubble.pop { transform: scale(1.35); opacity: 0; pointer-events: none; animation-play-state: paused; }
   @keyframes bob { from { translate: 0 -10px; } to { translate: 0 10px; } }
-  @media (prefers-reduced-motion: reduce) { .bubble { animation: none; } }
+  /* ふうせん：下から ふわっと上がってきて、その場で ゆれる（飛んでいかない） */
+  .balloon {
+    transform-origin: 50% 100%;
+    animation: sway 3.6s ease-in-out infinite alternate;
+    transition: top 2.4s cubic-bezier(.2, .8, .3, 1), transform .25s ease, opacity .25s ease;
+  }
+  .balloon.pop { transform-origin: 50% 33%; }
+  .balloon svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 8px 8px rgba(59,49,41,.14)); }
+  .b-body, .b-knot { fill: var(--c); }
+  .b-shade { fill: #000; opacity: .1; }
+  .b-shine { fill: #fff; opacity: .55; }
+  .b-string { fill: none; stroke: #b3a590; stroke-width: 2; stroke-linecap: round; }
+  @keyframes sway { from { translate: 0 -6px; rotate: -3deg; } to { translate: 0 6px; rotate: 3deg; } }
+
+  /* 正解・完成・割れたとき の小さな粒（音なし・0.7秒で消える） */
+  .spark {
+    position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none;
+    width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    animation: spark .7s ease-out forwards;
+  }
+  .spark.star {
+    width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 0;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  @keyframes spark { to { translate: var(--dx) var(--dy); scale: .3; opacity: 0; } }
 
   /* ---------- パズル（かたちはめ・えあわせ） ---------- */
   .pz-area {
@@ -215,20 +332,26 @@
     gap: clamp(22px, 5vw, 60px);
     padding-bottom: 20px;
   }
-  .pz-board { border-radius: 24px; background: #eadbc2; transition: box-shadow .3s ease; }
-  .pz-board.hame {
-    display: grid; gap: calc(var(--k) * 18px); padding: calc(var(--k) * 18px);
-    box-shadow: inset 0 2px 6px rgba(46,42,36,.12);
+  /* 木のおもちゃの板 */
+  .pz-board {
+    border-radius: 26px;
+    background: linear-gradient(#f5e7cf, #e8d2ae);
+    box-shadow: inset 0 3px 0 rgba(255,255,255,.55), 0 6px 0 #d6bb92, 0 12px 24px rgba(59,49,41,.08);
+    transition: box-shadow .3s ease;
   }
+  .pz-board.hame { display: grid; gap: calc(var(--k) * 18px); padding: calc(var(--k) * 18px); }
   .pz-board.frame { padding: calc(var(--k) * 12px); }
-  .pz-board.done { box-shadow: 0 0 0 4px var(--accent); animation: pz-done .6s ease; }
+  .pz-board.done {
+    box-shadow: 0 0 0 5px var(--accent), 0 6px 0 #d6bb92, 0 12px 26px rgba(63,174,120,.25);
+    animation: pz-done .6s ease;
+  }
   @keyframes pz-done { 40% { scale: 1.04; } }
   .pz-tray { display: grid; gap: calc(var(--k) * 18px); justify-content: center; }
   .pz-tray.strips { gap: calc(var(--k) * 12px); }
 
   .pz-slot { position: relative; cursor: pointer; }
   .hame .pz-slot, .pz-cell.shape, .pz-piece.shape { width: var(--P); height: var(--P); }
-  .hole { display: block; width: 100%; height: 100%; fill: #c9ae84; paint-order: stroke; }
+  .hole { display: block; width: 100%; height: 100%; fill: #c9ab7f; paint-order: stroke; }
   .pz-slot.hint .hole { stroke: var(--warm); stroke-width: 7; }
 
   .pz-grid { position: relative; display: grid; width: var(--S); height: var(--S); background: var(--card); }
@@ -249,7 +372,7 @@
 
   .pz-piece { position: relative; touch-action: none; cursor: grab; transition: translate .3s ease, scale .15s ease; }
   .pz-piece svg { display: block; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 3px 3px rgba(46,42,36,.25)); }
-  .pz-piece.strip { overflow: hidden; background: var(--card); border-radius: 10px; box-shadow: var(--shadow); }
+  .pz-piece.strip { overflow: hidden; background: var(--card); border-radius: 10px; box-shadow: 0 4px 0 var(--edge), 0 8px 16px rgba(59,49,41,.08); }
   .pz-piece.strip .pic { top: calc(var(--S) / var(--n) * var(--r) * -1); }
   .pz-piece.sel, .pz-piece.lift { scale: 1.08; z-index: 20; }
   .pz-piece.strip.sel, .pz-piece.strip.lift { box-shadow: 0 10px 24px rgba(46,42,36,.22); }
@@ -259,28 +382,34 @@
   .pz-slot .pz-piece { position: absolute; left: 0; top: 0; cursor: default; }
   .pz-slot .pz-piece svg { filter: none; }
   .pz-slot .pz-piece.strip { border-radius: 0; box-shadow: none; }
-  @media (prefers-reduced-motion: reduce) { .pz-board.done { animation: none; } }
   @media (max-height: 700px) { .pz-area { padding-bottom: 8px; } }
 
   /* ---------- スケジュール ---------- */
-  .sched-list { display: flex; flex-direction: column; gap: 14px; }
+  .sched-list { display: flex; flex-direction: column; gap: 16px; padding-bottom: 6px; }
   .sched-item {
-    display: flex; align-items: center; gap: 18px;
-    background: var(--card); border-radius: 22px; padding: 18px 20px;
-    box-shadow: var(--shadow); border: 3px solid transparent;
+    display: flex; align-items: center; gap: 16px;
+    background: var(--card); border-radius: 26px; padding: 12px 18px 12px 12px;
+    box-shadow: 0 6px 0 var(--edge), 0 12px 22px rgba(59,49,41,.06);
+    border: 4px solid transparent;
     cursor: pointer; font-family: inherit; text-align: left; width: 100%;
     color: var(--ink);
+    transition: transform .1s ease, box-shadow .1s ease;
   }
-  .sched-item .ico { font-size: 2.6rem; line-height: 1; flex: none; }
-  .sched-item .label { font-size: 1.6rem; font-weight: 700; flex: 1; }
+  .sched-item:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--edge); }
+  .sched-item .ico {
+    font-size: 2.2rem; line-height: 1; flex: none;
+    width: 1.9em; height: 1.9em; border-radius: 50%;
+    display: grid; place-items: center; background: #fff3dc;
+  }
+  .sched-item .label { font-size: 1.6rem; font-weight: 800; flex: 1; }
   .sched-item .check {
-    width: 40px; height: 40px; border-radius: 50%;
-    border: 3px solid var(--line); flex: none;
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 4px solid var(--line); flex: none;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.4rem; color: #fff;
+    font-size: 1.5rem; font-weight: 800; color: #fff;
   }
-  .sched-item.now { border-color: var(--warm); }
-  .sched-item.done { opacity: .45; }
+  .sched-item.now { border-color: var(--warm); background: #fffaf0; }
+  .sched-item.done { opacity: .5; }
   .sched-item.done .check { background: var(--accent); border-color: var(--accent); }
   .empty { color: var(--ink-soft); font-size: 1.1rem; text-align: center; padding: 40px 10px; line-height: 1.9; grid-column: 1 / -1; }
 
@@ -290,17 +419,17 @@
     z-index: 50;
   }
   .parent { font-size: .98rem; line-height: 1.75; }
-  .parent h2 { font-size: 1.25rem; margin: 26px 0 10px; }
+  .parent h2 { font-size: 1.25rem; font-weight: 800; margin: 26px 0 10px; }
   .parent h2:first-of-type { margin-top: 6px; }
   .panel {
-    background: var(--card); border-radius: 18px; padding: 16px 18px;
-    box-shadow: var(--shadow); margin-bottom: 14px;
+    background: var(--card); border-radius: 22px; padding: 16px 18px;
+    box-shadow: 0 4px 0 var(--edge), var(--shadow); margin-bottom: 14px;
   }
   table { width: 100%; border-collapse: collapse; font-size: .95rem; }
   th, td { padding: 9px 6px; text-align: left; border-bottom: 1px solid var(--line); }
-  th { color: var(--ink-soft); font-weight: 600; font-size: .85rem; }
+  th { color: var(--ink-soft); font-weight: 700; font-size: .85rem; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .rate { font-weight: 700; }
+  .rate { font-weight: 800; }
   .muted { color: var(--ink-soft); }
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   input[type="text"] {
@@ -311,12 +440,12 @@
   input.emo-in { width: 64px; text-align: center; font-size: 1.4rem; }
   input.lab-in { flex: 1; min-width: 120px; }
   .mini {
-    border: none; border-radius: 12px; padding: 10px 16px;
-    font-family: inherit; font-size: .95rem; cursor: pointer;
+    border: none; border-radius: 14px; padding: 10px 16px;
+    font-family: inherit; font-size: .95rem; font-weight: 700; cursor: pointer;
     background: var(--accent); color: #fff;
   }
-  .mini.ghost { background: var(--accent-soft); color: var(--accent); }
-  .mini.warn { background: #f0e2e2; color: #a35a5a; }
+  .mini.ghost { background: var(--accent-soft); color: var(--accent-edge); }
+  .mini.warn { background: #f7e3e0; color: #b0574c; }
   .edit-row {
     display: flex; gap: 8px; align-items: center;
     padding: 8px 0; border-bottom: 1px solid var(--line);
@@ -331,6 +460,13 @@
     overflow-y: auto; flex: 1; min-height: 0; -webkit-overflow-scrolling: touch;
     margin: -8px -12px 0; padding: 8px 12px 16px;
   }
+
+  /* 動きを減らす設定の端末では、飾りの動きを止める */
+  @media (prefers-reduced-motion: reduce) {
+    .screen.on, .choice, .dot.just, .stars .dot, .bubble, .balloon, .pz-board.done { animation: none; }
+    .balloon { transition: transform .25s ease, opacity .25s ease; }
+    .spark { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -339,8 +475,9 @@
   <!-- ホーム -->
   <section class="screen on" id="s-home">
     <div class="home-wrap">
-      <button class="big-btn" data-go="menu"><span class="ico">🧩</span>あそぶ</button>
-      <button class="big-btn" data-go="sched"><span class="ico">📋</span>きょう</button>
+      <h1 class="logo" aria-label="あそぼう"><span>あ</span><span>そ</span><span>ぼ</span><span>う</span></h1>
+      <button class="big-btn play" data-go="menu"><span class="ico">🧩</span>あそぶ</button>
+      <button class="big-btn today" data-go="sched"><span class="ico">📋</span>きょう</button>
     </div>
   </section>
 
@@ -363,11 +500,11 @@
     </div>
   </section>
 
-  <!-- しゃぼんだま -->
-  <section class="screen" id="s-bubble">
+  <!-- しゃぼんだま・ふうせん -->
+  <section class="screen" id="s-pop">
     <div class="bar">
       <button class="back" data-go="menu">← もどる</button>
-      <div class="dots many" id="bubble-dots"></div>
+      <div class="dots many" id="pop-dots"></div>
     </div>
     <div class="pond" id="pond"></div>
   </section>
@@ -387,9 +524,9 @@
   <!-- おわり -->
   <section class="screen" id="s-finish">
     <div class="finish">
-      <div class="mark">🌿</div>
+      <div class="stars" id="finish-stars"></div>
       <div class="txt">おしまい</div>
-      <button class="big-btn" data-go="menu" style="font-size:1.6rem;padding:26px">つぎへ</button>
+      <button class="big-btn next" data-go="menu">つぎへ</button>
     </div>
   </section>
 
@@ -493,7 +630,7 @@
     timers.forEach(clearTimeout);
     timers = [];
     current = name;
-    var ids = { home: "s-home", menu: "s-menu", task: "s-task", puzzle: "s-puzzle", bubble: "s-bubble", finish: "s-finish", sched: "s-sched", parent: "s-parent" };
+    var ids = { home: "s-home", menu: "s-menu", task: "s-task", puzzle: "s-puzzle", pop: "s-pop", finish: "s-finish", sched: "s-sched", parent: "s-parent" };
     Object.keys(ids).forEach(function (k) {
       document.getElementById(ids[k]).classList.toggle("on", k === name);
     });
@@ -517,11 +654,18 @@
   var POOL = FRUITS.concat(VEG, TOYS, ANIMALS);
   // かげ：輪郭がはっきり違うものだけ
   var KAGE = ["🐘", "🦒", "🐢", "🐟", "🦋", "🦀", "🐇", "🚗", "✈️", "🚲", "🍌", "🍎", "☂️", "🔑", "⭐"];
+  // いろ：似た色（あか と ピンク など）は、はずれとして一緒に出さない（差が極端なものから）
   var COLORS = [
-    { name: "あか", c: "#e0533f" },
-    { name: "あお", c: "#3b7dd8" },
-    { name: "きいろ", c: "#f3c21b" },
-    { name: "みどり", c: "#3f9f5a" }
+    { name: "あか", c: "#e53935", near: ["ピンク", "オレンジ"] },
+    { name: "オレンジ", c: "#fb8c00", near: ["あか", "きいろ", "ちゃいろ"] },
+    { name: "きいろ", c: "#fdd835", near: ["オレンジ"] },
+    { name: "みどり", c: "#43a047", near: [] },
+    { name: "みずいろ", c: "#4fc3f7", near: ["あお"] },
+    { name: "あお", c: "#1e63d6", near: ["みずいろ", "むらさき"] },
+    { name: "むらさき", c: "#8e44ad", near: ["あお", "ピンク"] },
+    { name: "ピンク", c: "#f48fb1", near: ["あか", "むらさき"] },
+    { name: "ちゃいろ", c: "#8d5a2b", near: ["オレンジ", "くろ"] },
+    { name: "くろ", c: "#333333", near: ["ちゃいろ"] }
   ];
   // かたち：色はそろえて、形だけで選べるようにする
   var SHAPES = [
@@ -571,7 +715,7 @@
 
   var TASKS = {
     size: {
-      ico: "🔍", label: "おおきい ちいさい",
+      ico: "🔍", label: "おおきい ちいさい", pair: true, // 答えが2通りだけの課題
       make: function () {
         var emo = pick(FRUITS.concat(TOYS));
         var wantSmall = Math.random() < 0.5;
@@ -662,8 +806,19 @@
     iro: {
       ico: "🎨", label: "いろ",
       make: function () {
-        var t = three(COLORS, function (x) { return { color: x.c }; });
-        return { prompt: t.target.name + " さがして", answer: "a", choices: t.choices };
+        var target = pick(COLORS);
+        var others = shuffle(COLORS.filter(function (x) {
+          return x !== target && target.near.indexOf(x.name) === -1;
+        }));
+        return {
+          prompt: target.name + " さがして",
+          answer: "a",
+          choices: shuffle([
+            { color: target.c, key: "a" },
+            { color: others[0].c, key: "b" },
+            { color: others[1].c, key: "c" }
+          ])
+        };
       }
     },
     katachi: {
@@ -705,7 +860,7 @@
       }
     },
     ooi: {
-      ico: "🧮", label: "おおい すくない",
+      ico: "🧮", label: "おおい すくない", pair: true,
       make: function () {
         var emo = pick(FRUITS);
         var p = pick([[1, 4], [1, 5], [2, 5]]); // 差は極端に
@@ -730,13 +885,24 @@
 
   // 記録をとらない自由あそび
   var PLAYS = {
-    bubble: { ico: "🫧", label: "しゃぼんだま", start: startBubbles }
+    bubble: { ico: "🫧", label: "しゃぼんだま", start: function () { startPop("bubble"); } },
+    balloon: { ico: "🎈", label: "ふうせん", start: function () { startPop("balloon"); } }
   };
-  var MENU_ORDER = RECORDED.concat(["bubble"]);
+  var MENU_ORDER = RECORDED.concat(["bubble", "balloon"]);
+
+  // メニューのカードの色（面・下のふち）。あそびごとに色で見分けやすくする
+  var TINTS = {
+    size: ["#ffe4e1", "#f3b5ab"], count: ["#fff0d1", "#efcb82"], sort: ["#fff6c4", "#e9d674"],
+    onoma: ["#e8f6da", "#b5da92"], iro: ["#dff0fb", "#9ccbec"], katachi: ["#ece6fb", "#c1b3ee"],
+    onaji: ["#fde4f0", "#eeafcc"], kage: ["#e5e9f3", "#b2bed8"], kimochi: ["#fff0dc", "#f0c592"],
+    kotoba: ["#dcf3ef", "#9dd6ca"], ooi: ["#f4ecdd", "#d7c29d"], hame: ["#f6e8d4", "#dbbd93"],
+    eawase: ["#e3eeff", "#a7c3f1"], bubble: ["#dff5f7", "#a0dbe2"], balloon: ["#ffe3ea", "#f2a8bb"]
+  };
 
   function menuItem(k) { return TASKS[k] || PUZZLES[k] || PLAYS[k]; }
   function icoHTML(it, cls) {
-    return '<span class="' + cls + (it.icoSil ? " sil" : "") + '">' + it.ico + '</span>';
+    // かげ の絵は黒くぬるが、まわりの白い丸はそのままにする
+    return '<span class="' + cls + '">' + (it.icoSil ? '<span class="sil">' + it.ico + '</span>' : it.ico) + '</span>';
   }
 
   function renderMenu() {
@@ -747,6 +913,10 @@
       var it = menuItem(k);
       var b = document.createElement("button");
       b.className = "menu-card";
+      if (TINTS[k]) {
+        b.style.setProperty("--c1", TINTS[k][0]);
+        b.style.setProperty("--c2", TINTS[k][1]);
+      }
       b.innerHTML = icoHTML(it, "ico") + '<span class="label">' + it.label + '</span>';
       b.addEventListener("click", function () {
         if (TASKS[k]) startTask(k);
@@ -762,6 +932,8 @@
 
   /* ============ 課題の進行 ============ */
   var cur = null;
+  // 課題ごとに、直前に出した答えと正解の位置を覚えておく（同じものが続かないように）
+  var recent = {};
 
   function startTask(key) {
     cur = { key: key, i: 0, q: null, tries: 0 };
@@ -770,8 +942,18 @@
   }
 
   function nextQ() {
-    if (cur.i >= ROUND) { go("finish"); return; }
-    cur.q = TASKS[cur.key].make();
+    if (cur.i >= ROUND) { finish(ROUND); return; }
+    var T = TASKS[cur.key];
+    var h = recent[cur.key] || (recent[cur.key] = { t: [], p: [] });
+    // 同じ答えを続けて出さない（答えが2通りしかない課題は、3回続けて同じにならなければよい）
+    var q, n = 0;
+    do { q = T.make(); } while (n++ < 30 && repeated(h.t, targetOf(q), T.pair ? 2 : 1));
+    // 正解の場所も、3回続けて同じにならないように並べ直す（場所だけで選べてしまわないように）
+    n = 0;
+    while (n++ < 30 && repeated(h.p, answerPos(q), 2)) q.choices = shuffle(q.choices);
+    h.t = h.t.concat(targetOf(q)).slice(-2);
+    h.p = h.p.concat(answerPos(q)).slice(-2);
+    cur.q = q;
     cur.tries = 0;
     cur.locked = false;
     drawDots("dots", ROUND, cur.i);
@@ -792,6 +974,18 @@
     });
   }
 
+  function targetOf(q) { return q.prompt + (q.sample ? " " + q.sample.emo : ""); }
+  function answerPos(q) {
+    for (var i = 0; i < q.choices.length; i++) if (q.choices[i].key === q.answer) return i;
+    return -1;
+  }
+  // 直前の limit 回がすべて v なら true（v をもう一度出すと limit+1 回続いてしまう）
+  function repeated(hist, v, limit) {
+    if (hist.length < limit) return false;
+    for (var i = hist.length - limit; i < hist.length; i++) if (hist[i] !== v) return false;
+    return true;
+  }
+
   // 選択肢・見本の中身（絵文字／いくつかのまとまり／色／かたち）
   function faceHTML(c) {
     if (c.group) {
@@ -803,7 +997,7 @@
         return '<span class="group-row">' + row + '</span>';
       }).join("") + '</span>';
     }
-    if (c.color) return '<span class="swatch" style="background:' + c.color + '"></span>';
+    if (c.color) return '<span class="swatch" style="background-color:' + c.color + '"></span>';
     if (c.shape) return '<svg class="shape" viewBox="0 0 100 100" aria-hidden="true">' + c.shape + '</svg>';
     return '<span class="emo' + (c.sil ? " sil" : "") + '" style="font-size:calc(var(--k) * ' + (c.size || 110) + 'px)">' + c.emo + '</span>';
   }
@@ -813,7 +1007,8 @@
     d.innerHTML = "";
     for (var i = 0; i < total; i++) {
       var s = document.createElement("span");
-      s.className = "dot" + (i < done ? " done" : "");
+      // いま増えた星だけ、ぽんと はずませる
+      s.className = "dot" + (i < done ? " done" : "") + (i === done - 1 ? " just" : "");
       d.appendChild(s);
     }
   }
@@ -834,6 +1029,7 @@
     }
     cur.locked = true;
     el.classList.add("right");
+    burst(el, 10);
     record(cur.key, cur.tries === 0);
     later(function () { cur.i++; nextQ(); }, 700);
   }
@@ -844,81 +1040,147 @@
     save(KEY_LOG, log);
   }
 
-  /* ============ しゃぼんだま（自由あそび・記録なし） ============ */
+  // おしまい画面。やった数だけ星がならぶ（正解の数ではなく、やりきった数）
+  function finish(n) {
+    var box = document.getElementById("finish-stars");
+    box.innerHTML = "";
+    box.classList.toggle("many", n > 5);
+    for (var i = 0; i < n; i++) {
+      var s = document.createElement("span");
+      s.className = "dot done";
+      s.style.animationDelay = (0.15 + i * 0.12).toFixed(2) + "s";
+      box.appendChild(s);
+    }
+    go("finish");
+  }
+
+  // 正解・完成・割れたときの、小さな粒（音なし・0.7秒で消える）
+  var SPARK = ["#ffc93c", "#ff8fa3", "#7cc6ff", "#8ee0a1", "#c9a7ff"];
+  function burst(el, n, colors) {
+    var r = el.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    var dist = Math.max(r.width, r.height) / 2 + 24;
+    colors = colors || SPARK;
+    for (var i = 0; i < n; i++) {
+      var s = document.createElement("span");
+      var a = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+      var d = dist * (0.8 + Math.random() * 0.4);
+      s.className = "spark" + (i % 3 === 0 ? " star" : "");
+      s.style.left = cx + "px";
+      s.style.top = cy + "px";
+      s.style.background = colors[i % colors.length];
+      s.style.setProperty("--dx", (Math.cos(a) * d).toFixed(1) + "px");
+      s.style.setProperty("--dy", (Math.sin(a) * d).toFixed(1) + "px");
+      document.body.appendChild(s);
+      setTimeout(s.remove.bind(s), 800);
+    }
+  }
+
+  /* ============ しゃぼんだま・ふうせん（自由あそび・記録なし） ============ */
   // 逃げない・消えない・時間制限なし。決まった数を割ったらおしまい
-  var BUBBLES = 8;
-  var HUES = [200, 170, 130, 20, 330, 280]; // 背景に溶けやすい うすい黄色は使わない
-  var bub = null;
+  var POPS = 8;
+  var HUES = [200, 170, 130, 20, 330, 280]; // しゃぼんだま：背景に溶けやすい うすい黄色は使わない
+  var BALLOON_COLORS = ["#e53935", "#fb8c00", "#fdd835", "#43a047", "#1e88e5", "#8e44ad", "#f06292"];
+  var BALLOON_SVG = '<svg viewBox="0 0 100 160" aria-hidden="true">' +
+    '<path class="b-string" d="M50 110 C 43 124 57 136 48 156"/>' +
+    '<path class="b-knot" d="M43 111 L57 111 L50 101 Z"/>' +
+    '<path class="b-body" d="M50 4 C 22 4 7 27 7 52 C 7 80 29 100 50 105 C 71 100 93 80 93 52 C 93 27 78 4 50 4 Z"/>' +
+    '<path class="b-shade" d="M50 105 C 71 100 93 80 93 52 C 93 38 88 26 80 18 C 84 30 84 44 80 58 C 73 82 60 96 50 105 Z"/>' +
+    '<ellipse class="b-shine" cx="33" cy="32" rx="8" ry="15" transform="rotate(-25 33 32)"/></svg>';
+  var game = null;
 
-  function startBubbles() {
-    go("bubble");
-    bub = { popped: 0, spawned: 0 };
+  function startPop(kind) {
+    go("pop");
+    // 色は袋から順に出す（同じ色ばかり続かないように）
+    game = { kind: kind, popped: 0, spawned: 0, colors: shuffle(kind === "balloon" ? BALLOON_COLORS : HUES) };
     document.getElementById("pond").innerHTML = "";
-    drawDots("bubble-dots", BUBBLES, 0);
-    for (var i = 0; i < 3; i++) spawnBubble();
+    drawDots("pop-dots", POPS, 0);
+    for (var i = 0; i < 3; i++) spawnPop();
   }
 
-  function spawnBubble() {
-    if (!bub || bub.spawned >= BUBBLES) return;
-    bub.spawned++;
+  function spawnPop() {
+    if (!game || game.spawned >= POPS) return;
     var pond = document.getElementById("pond");
-    var size = Math.max(90, Math.min(170, Math.round(Math.min(pond.clientWidth, pond.clientHeight) * 0.3)));
-    var spot = freeSpot(pond, size);
+    var W = pond.clientWidth, H = pond.clientHeight;
+    var balloon = game.kind === "balloon";
+    var w = balloon ? Math.max(76, Math.min(150, Math.round(Math.min(W, H) * 0.24)))
+                    : Math.max(90, Math.min(170, Math.round(Math.min(W, H) * 0.3)));
+    var h = balloon ? Math.round(w * 1.6) : w;
+    var spot = freeSpot(pond, w, h);
+    var color = game.colors[game.spawned % game.colors.length];
+    game.spawned++;
     var b = document.createElement("button");
-    b.className = "bubble new";
-    b.setAttribute("aria-label", "しゃぼんだま");
-    b.style.width = b.style.height = size + "px";
+    b.className = "popper " + game.kind;
+    b.setAttribute("aria-label", balloon ? "ふうせん" : "しゃぼんだま");
+    b.style.width = w + "px";
+    b.style.height = h + "px";
     b.style.left = spot.x + "px";
-    b.style.top = spot.y + "px";
-    b.style.setProperty("--h", pick(HUES));
     b.style.animationDelay = -(Math.random() * 3).toFixed(2) + "s";
+    b._x = spot.x;
+    b._y = spot.y;
+    if (balloon) {
+      b.style.setProperty("--c", color);
+      b.innerHTML = BALLOON_SVG;
+      b.style.top = (H + 10) + "px"; // 下の見えない所から、ふわっと上がってくる
+    } else {
+      b.style.setProperty("--h", color);
+      b.style.top = spot.y + "px";
+      b.classList.add("new");
+    }
     // 指が触れた瞬間に割れるよう pointerdown。キーボード操作用に click も受ける
-    b.addEventListener("pointerdown", function () { popBubble(b); });
-    b.addEventListener("click", function () { popBubble(b); });
+    b.addEventListener("pointerdown", function () { popIt(b); });
+    b.addEventListener("click", function () { popIt(b); });
     pond.appendChild(b);
-    void b.offsetWidth; // 一度配置を確定させてから、ふわっと出す
-    b.classList.remove("new");
+    void b.offsetWidth; // 一度配置を確定させてから動かす
+    if (balloon) b.style.top = spot.y + "px"; else b.classList.remove("new");
   }
 
-  // ほかのしゃぼんだまと重ならない場所をさがす（見つからなければ一番すいている所）
-  function freeSpot(pond, size) {
+  // ほかと重ならない場所をさがす（見つからなければ一番すいている所）。位置は行き先（_x, _y）でくらべる
+  function freeSpot(pond, w, h) {
     var W = pond.clientWidth, H = pond.clientHeight;
     var others = Array.prototype.filter.call(pond.children, function (o) { return !o.classList.contains("pop"); });
     var best = null, bestGap = -Infinity;
     for (var t = 0; t < 40; t++) {
-      var x = 12 + Math.random() * Math.max(0, W - size - 24);
-      var y = 16 + Math.random() * Math.max(0, H - size - 32);
+      var x = 12 + Math.random() * Math.max(0, W - w - 24);
+      var y = 16 + Math.random() * Math.max(0, H - h - 32);
       var gap = Infinity;
       others.forEach(function (o) {
-        var s = o.offsetWidth;
-        var dx = (o.offsetLeft + s / 2) - (x + size / 2);
-        var dy = (o.offsetTop + s / 2) - (y + size / 2);
-        gap = Math.min(gap, Math.sqrt(dx * dx + dy * dy) - (s + size) / 2);
+        var ow = o.offsetWidth, oh = o.offsetHeight;
+        var dx = (o._x + ow / 2) - (x + w / 2), dy = (o._y + oh / 2) - (y + h / 2);
+        gap = Math.min(gap, Math.sqrt(dx * dx + dy * dy) - (Math.max(ow, oh) + Math.max(w, h)) / 2 * 0.8);
       });
       if (gap > bestGap) { bestGap = gap; best = { x: x, y: y }; }
-      if (gap > 16) break;
+      if (gap > 12) break;
     }
     return best;
   }
 
-  function popBubble(b) {
-    if (!bub || b.classList.contains("pop")) return;
+  function popIt(b) {
+    if (!game || b.classList.contains("pop")) return;
+    var balloon = game.kind === "balloon";
     b.classList.add("pop");
-    bub.popped++;
-    drawDots("bubble-dots", BUBBLES, bub.popped);
+    if (balloon) {
+      var c = b.style.getPropertyValue("--c");
+      burst(b.querySelector(".b-body"), 10, [c, "#ffd766", c, "#ffffff"]);
+    } else {
+      burst(b, 8);
+    }
+    game.popped++;
+    drawDots("pop-dots", POPS, game.popped);
     later(function () { b.remove(); }, 320);
-    if (bub.popped >= BUBBLES) later(function () { go("finish"); }, 800);
-    else later(spawnBubble, 450);
+    if (game.popped >= POPS) later(function () { finish(POPS); }, 900);
+    else later(spawnPop, 450);
   }
 
-  // 画面の向きが変わっても、しゃぼんだまが見える範囲に収まるように
+  // 画面の向きが変わっても、見える範囲に収まるように
   window.addEventListener("resize", function () {
-    if (current !== "bubble") return;
+    if (current !== "pop") return;
     var pond = document.getElementById("pond");
     Array.prototype.forEach.call(pond.children, function (b) {
-      var s = b.offsetWidth;
-      b.style.left = Math.max(0, Math.min(b.offsetLeft, pond.clientWidth - s - 12)) + "px";
-      b.style.top = Math.max(0, Math.min(b.offsetTop, pond.clientHeight - s - 16)) + "px";
+      b._x = Math.max(0, Math.min(b._x, pond.clientWidth - b.offsetWidth - 12));
+      b._y = Math.max(0, Math.min(b._y, pond.clientHeight - b.offsetHeight - 16));
+      b.style.left = b._x + "px";
+      b.style.top = b._y + "px";
     });
   });
 
@@ -956,7 +1218,7 @@
 
   function nextPuzzle() {
     var P = PUZZLES[pz.key];
-    if (pz.i >= P.sizes.length) { go("finish"); return; }
+    if (pz.i >= P.sizes.length) { finish(P.sizes.length); return; }
     drag = null;
     selected = null;
     pz.mistakes = 0;
@@ -1019,8 +1281,11 @@
     return { prompt: "かたち はめて", board: board, tray: tray };
   }
 
+  var lastFace = null;
   function buildEawase(n) {
-    var f = pick(FACES);
+    var f;
+    do { f = pick(FACES); } while (f === lastFace); // 同じどうぶつが続かないように
+    lastFace = f;
     var rows = [];
     for (var r = 0; r < n; r++) rows.push(r);
     var board = el("div", "pz-board frame");
@@ -1141,7 +1406,9 @@
 
   function finishPuzzle() {
     pz.locked = true;
-    document.querySelector("#pz-area .pz-board").classList.add("done");
+    var board = document.querySelector("#pz-area .pz-board");
+    board.classList.add("done");
+    burst(board, 14);
     record(pz.key, pz.mistakes === 0);
     later(function () { pz.i++; nextPuzzle(); }, 1200);
   }
@@ -1281,7 +1548,8 @@
             "・1セッション5問。上の丸で「あと何問か」が見える＝終わりが目で見える<br>" +
             "・パズルは1回3つで、ピースが2→3→4と増える。ちがう場所に置くと戻るだけで、1回まちがえるとそのピースと正しい場所に枠が出る。" +
             "指で動かすほか、ピースをタップ→置く場所をタップ でも置ける<br>" +
-            "・しゃぼんだまは記録なしの自由あそび。逃げたり消えたりせず、8こ割ったらおしまい<br>" +
+            "・同じ答えは続けて出さない（2通りしかない課題は3回続けない）。正解の場所も3回続けて同じにしない<br>" +
+            "・しゃぼんだま・ふうせんは記録なしの自由あそび。逃げたり消えたりせず、8こ割ったらおしまい<br>" +
             "・iPad の「アクセスガイド」（設定→アクセシビリティ）を使うとアプリから出られなくできる<br>" +
             "・保護者メニューは右上を3秒長押し" +
             "</p></div>";
