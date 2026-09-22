@@ -341,14 +341,27 @@
   "use strict";
 
   /* ============ ストレージ ============ */
-  var KEY_LOG = "dev_log_v1";
-  var KEY_SCHED = "dev_sched_v1";
-  var KEY_SCHED_DONE = "dev_sched_done_v1";
-  var KEY_HIDDEN = "dev_hidden_v1";
+  // github.io では同じアカウントの他のページと保存領域を共有するので、名前に asobou_ を付けて区別する
+  var KEY_LOG = "asobou_log_v1";
+  var KEY_SCHED = "asobou_sched_v1";
+  var KEY_SCHED_DONE = "asobou_sched_done_v1";
+  var KEY_HIDDEN = "asobou_hidden_v1";
 
+  // 以前の名前で保存した記録・スケジュールを引き継ぐ（元のデータは消さない）
+  [["dev_log_v1", KEY_LOG], ["dev_sched_v1", KEY_SCHED], ["dev_sched_done_v1", KEY_SCHED_DONE]].forEach(function (p) {
+    try {
+      var old = localStorage.getItem(p[0]);
+      if (old !== null && localStorage.getItem(p[1]) === null) localStorage.setItem(p[1], old);
+    } catch (e) {}
+  });
+
+  // 形のおかしいデータ（壊れたもの）は使わず、初期値にする
   function load(k, fb) {
-    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; }
-    catch (e) { return fb; }
+    try {
+      var v = JSON.parse(localStorage.getItem(k));
+      if (v !== null && typeof v === "object" && Array.isArray(v) === Array.isArray(fb)) return v;
+    } catch (e) {}
+    return fb;
   }
   function save(k, v) {
     try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
@@ -374,9 +387,12 @@
     });
   }
 
+  log = log.filter(function (r) { return r && typeof r.t === "number" && typeof r.task === "string"; });
+  sched = sched.filter(function (it) { return it && typeof it.label === "string"; });
+
   // チェック済みは「何番目か」ではなく項目ごとの id で覚える（並べ替え・削除でずれないように）
   sched.forEach(function (it) { if (!it.id) it.id = newId(); });
-  schedDone.done = (schedDone.done || []).map(function (x) {
+  schedDone.done = (Array.isArray(schedDone.done) ? schedDone.done : []).map(function (x) {
     return typeof x === "number" ? sched[x] && sched[x].id : x; // 以前の形式（番号）を id に置き換え
   }).filter(Boolean);
   save(KEY_SCHED, sched);
