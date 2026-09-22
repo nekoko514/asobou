@@ -126,10 +126,12 @@
 
   /* ---------- 課題画面 ---------- */
   .prompt {
-    text-align: center; font-size: clamp(2rem, 5vw, 2.8rem);
+    text-align: center; font-size: clamp(2rem, min(5vw, 6vh), 2.8rem);
     font-weight: 700; margin: 10px 0 28px; letter-spacing: .04em;
     word-break: keep-all; overflow-wrap: anywhere;
   }
+  /* 背の低い画面（横向きのスマホなど）では余白をつめて、スクロールなしで収める */
+  @media (max-height: 700px) { .prompt { margin: 4px 0 16px; } }
   .task-body { display: flex; flex-direction: column; }
   /* おなじ・かげ の見本。押せる選択肢と区別できるよう、点線の枠だけにする */
   .sample {
@@ -201,6 +203,64 @@
   .bubble.pop { transform: scale(1.35); opacity: 0; pointer-events: none; animation-play-state: paused; }
   @keyframes bob { from { translate: 0 -10px; } to { translate: 0 10px; } }
   @media (prefers-reduced-motion: reduce) { .bubble { animation: none; } }
+
+  /* ---------- パズル（かたちはめ・えあわせ） ---------- */
+  .pz-area {
+    /* 盤とピースが縦に並んでも、スクロールせずに1画面に収まる大きさにする */
+    --P: min(calc(var(--k) * 118px), 13vh); /* かたちはめ のピース */
+    --S: min(calc(var(--k) * 250px), 28vh); /* えあわせ の絵 */
+    flex: 1 0 auto;
+    display: flex; flex-wrap: wrap;
+    align-items: center; justify-content: center; align-content: center;
+    gap: clamp(22px, 5vw, 60px);
+    padding-bottom: 20px;
+  }
+  .pz-board { border-radius: 24px; background: #eadbc2; transition: box-shadow .3s ease; }
+  .pz-board.hame {
+    display: grid; gap: calc(var(--k) * 18px); padding: calc(var(--k) * 18px);
+    box-shadow: inset 0 2px 6px rgba(46,42,36,.12);
+  }
+  .pz-board.frame { padding: calc(var(--k) * 12px); }
+  .pz-board.done { box-shadow: 0 0 0 4px var(--accent); animation: pz-done .6s ease; }
+  @keyframes pz-done { 40% { scale: 1.04; } }
+  .pz-tray { display: grid; gap: calc(var(--k) * 18px); justify-content: center; }
+  .pz-tray.strips { gap: calc(var(--k) * 12px); }
+
+  .pz-slot { position: relative; cursor: pointer; }
+  .hame .pz-slot, .pz-cell.shape, .pz-piece.shape { width: var(--P); height: var(--P); }
+  .hole { display: block; width: 100%; height: 100%; fill: #c9ae84; paint-order: stroke; }
+  .pz-slot.hint .hole { stroke: var(--warm); stroke-width: 7; }
+
+  .pz-grid { position: relative; display: grid; width: var(--S); height: var(--S); background: var(--card); }
+  .pz-grid .pz-slot::after {
+    content: ""; position: absolute; inset: 3px; border-radius: 6px;
+    border: 2px dashed rgba(46,42,36,.2); pointer-events: none;
+  }
+  .pz-grid .pz-slot.filled::after { display: none; }
+  .pz-grid .pz-slot.hint::after { border: 3px solid var(--warm); }
+  /* 絵はピースごとに同じ大きさで描き、帯の位置だけずらして見せる（はめると1枚の絵になる） */
+  .pic {
+    position: absolute; left: 0; top: 0; width: var(--S); height: var(--S);
+    display: flex; align-items: center; justify-content: center;
+    font-size: calc(var(--S) * .88); line-height: 1; pointer-events: none; overflow: hidden;
+  }
+  .pic.ghost { opacity: .22; filter: grayscale(1); }
+  .pz-cell.strip, .pz-piece.strip { width: var(--S); height: calc(var(--S) / var(--n)); }
+
+  .pz-piece { position: relative; touch-action: none; cursor: grab; transition: translate .3s ease, scale .15s ease; }
+  .pz-piece svg { display: block; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 3px 3px rgba(46,42,36,.25)); }
+  .pz-piece.strip { overflow: hidden; background: var(--card); border-radius: 10px; box-shadow: var(--shadow); }
+  .pz-piece.strip .pic { top: calc(var(--S) / var(--n) * var(--r) * -1); }
+  .pz-piece.sel, .pz-piece.lift { scale: 1.08; z-index: 20; }
+  .pz-piece.strip.sel, .pz-piece.strip.lift { box-shadow: 0 10px 24px rgba(46,42,36,.22); }
+  .pz-piece.shape.hint svg { filter: drop-shadow(0 0 3px var(--warm)) drop-shadow(0 0 5px var(--warm)); }
+  .pz-piece.strip.hint { box-shadow: 0 0 0 4px var(--warm); }
+  /* はまったピース */
+  .pz-slot .pz-piece { position: absolute; left: 0; top: 0; cursor: default; }
+  .pz-slot .pz-piece svg { filter: none; }
+  .pz-slot .pz-piece.strip { border-radius: 0; box-shadow: none; }
+  @media (prefers-reduced-motion: reduce) { .pz-board.done { animation: none; } }
+  @media (max-height: 700px) { .pz-area { padding-bottom: 8px; } }
 
   /* ---------- スケジュール ---------- */
   .sched-list { display: flex; flex-direction: column; gap: 14px; }
@@ -312,6 +372,18 @@
     <div class="pond" id="pond"></div>
   </section>
 
+  <!-- パズル -->
+  <section class="screen" id="s-puzzle">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+      <div class="dots" id="pz-dots"></div>
+    </div>
+    <div class="scroll task-body" id="pz-body">
+      <div class="prompt" id="pz-prompt"></div>
+      <div class="pz-area" id="pz-area"></div>
+    </div>
+  </section>
+
   <!-- おわり -->
   <section class="screen" id="s-finish">
     <div class="finish">
@@ -421,7 +493,7 @@
     timers.forEach(clearTimeout);
     timers = [];
     current = name;
-    var ids = { home: "s-home", menu: "s-menu", task: "s-task", bubble: "s-bubble", finish: "s-finish", sched: "s-sched", parent: "s-parent" };
+    var ids = { home: "s-home", menu: "s-menu", task: "s-task", puzzle: "s-puzzle", bubble: "s-bubble", finish: "s-finish", sched: "s-sched", parent: "s-parent" };
     Object.keys(ids).forEach(function (k) {
       document.getElementById(ids[k]).classList.toggle("on", k === name);
     });
@@ -652,15 +724,17 @@
   };
 
   var TASK_ORDER = ["size", "count", "sort", "onoma", "iro", "katachi", "onaji", "kage", "kimochi", "kotoba", "ooi"];
+  var PUZZLE_ORDER = ["hame", "eawase"]; // 中身は下の「パズル」
+  var RECORDED = TASK_ORDER.concat(PUZZLE_ORDER); // 保護者メニューの記録に出すもの
   var ROUND = 5; // 1セッションの問題数（終わりが見える）
 
   // 記録をとらない自由あそび
   var PLAYS = {
     bubble: { ico: "🫧", label: "しゃぼんだま", start: startBubbles }
   };
-  var MENU_ORDER = TASK_ORDER.concat(["bubble"]);
+  var MENU_ORDER = RECORDED.concat(["bubble"]);
 
-  function menuItem(k) { return TASKS[k] || PLAYS[k]; }
+  function menuItem(k) { return TASKS[k] || PUZZLES[k] || PLAYS[k]; }
   function icoHTML(it, cls) {
     return '<span class="' + cls + (it.icoSil ? " sil" : "") + '">' + it.ico + '</span>';
   }
@@ -675,7 +749,9 @@
       b.className = "menu-card";
       b.innerHTML = icoHTML(it, "ico") + '<span class="label">' + it.label + '</span>';
       b.addEventListener("click", function () {
-        if (TASKS[k]) startTask(k); else it.start();
+        if (TASKS[k]) startTask(k);
+        else if (PUZZLES[k]) startPuzzle(k);
+        else it.start();
       });
       g.appendChild(b);
     });
@@ -846,6 +922,230 @@
     });
   });
 
+  /* ============ パズル（かたちはめ・えあわせ） ============ */
+  // ちがう場所に置くとピースが戻るだけ（×なし）。1回まちがえると、そのピースと正しい場所に枠が出る。
+  // 指で動かすほか、「ピースをタップ → 置く場所をタップ」でも置ける。1回3つで、ピースは 2→3→4 と増える
+  var SHAPE_COLORS = { "まる": "#e0533f", "さんかく": "#f3c21b", "しかく": "#3b7dd8", "ほし": "#3f9f5a", "ハート": "#ec6f9e" };
+  // えあわせ：顔は左右がほぼ同じ形で取り違えやすいので、横長の帯（耳・目・口…）に分けて上から並べる
+  var FACES = [
+    { w: "いぬ", e: "🐶" }, { w: "ねこ", e: "🐱" }, { w: "パンダ", e: "🐼" }, { w: "かえる", e: "🐸" },
+    { w: "くま", e: "🐻" }, { w: "ぶた", e: "🐷" }, { w: "うさぎ", e: "🐰" }, { w: "ライオン", e: "🦁" },
+    { w: "とら", e: "🐯" }, { w: "さる", e: "🐵" }, { w: "コアラ", e: "🐨" }, { w: "うし", e: "🐮" }
+  ];
+
+  var PUZZLES = {
+    hame: {
+      ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true">' +
+           '<rect x="4" y="34" width="92" height="60" rx="12" fill="#e3c99c"/>' +
+           '<circle cx="30" cy="64" r="17" fill="#e0533f"/><polygon points="70,49 87,79 53,79" fill="#b9955f"/>' +
+           '<polygon points="70,4 88,36 52,36" fill="#f3c21b"/></svg>',
+      label: "かたちはめ", sizes: [2, 3, 4], build: buildHame
+    },
+    eawase: { ico: "🧩", label: "えあわせ", sizes: [2, 3, 4], build: buildEawase }
+  };
+
+  var pz = null;       // いま遊んでいるパズル
+  var drag = null;     // 指で動かしているピース
+  var selected = null; // タップで選んだピース
+
+  function startPuzzle(key) {
+    go("puzzle");
+    pz = { key: key, i: 0 };
+    nextPuzzle();
+  }
+
+  function nextPuzzle() {
+    var P = PUZZLES[pz.key];
+    if (pz.i >= P.sizes.length) { go("finish"); return; }
+    drag = null;
+    selected = null;
+    pz.mistakes = 0;
+    pz.locked = false;
+    drawDots("pz-dots", P.sizes.length, pz.i);
+    var q = P.build(P.sizes[pz.i]);
+    pz.left = P.sizes[pz.i];
+    document.getElementById("pz-body").scrollTop = 0;
+    document.getElementById("pz-prompt").textContent = q.prompt;
+    var area = document.getElementById("pz-area");
+    area.innerHTML = "";
+    area.appendChild(q.board);
+    area.appendChild(q.tray);
+    Array.prototype.forEach.call(area.querySelectorAll(".pz-piece"), function (p) {
+      p.addEventListener("pointerdown", pieceDown);
+      p.addEventListener("pointermove", pieceMove);
+      p.addEventListener("pointerup", pieceUp);
+      p.addEventListener("pointercancel", pieceCancel);
+    });
+    Array.prototype.forEach.call(area.querySelectorAll(".pz-slot"), function (s) {
+      s.addEventListener("click", function () { if (selected) tryPlace(selected, s); });
+    });
+  }
+
+  function el(tag, cls) {
+    var e = document.createElement(tag);
+    e.className = cls;
+    return e;
+  }
+  // 混ぜる。ただし正解と同じ並びにはしない（そのまま横にずらすだけ、にならないように）
+  function mixed(items) {
+    var sh = shuffle(items);
+    if (items.length > 1 && sh.every(function (x, i) { return x === items[i]; })) sh.push(sh.shift());
+    return sh;
+  }
+  function shapeSVG(s, cls, fill) {
+    return '<svg class="' + cls + '" viewBox="0 0 100 100" aria-hidden="true"' +
+           (fill ? ' style="fill:' + fill + '"' : "") + '>' + s.svg + '</svg>';
+  }
+
+  function buildHame(n) {
+    var shapes = shuffle(SHAPES).slice(0, n);
+    var board = el("div", "pz-board hame");
+    var tray = el("div", "pz-tray");
+    board.style.gridTemplateColumns = tray.style.gridTemplateColumns = "repeat(" + (n === 4 ? 2 : n) + ", auto)";
+    shapes.forEach(function (s) {
+      var slot = el("div", "pz-slot");
+      slot.setAttribute("data-id", s.name);
+      slot.innerHTML = shapeSVG(s, "hole");
+      board.appendChild(slot);
+    });
+    mixed(shapes).forEach(function (s) {
+      var cell = el("div", "pz-cell shape");
+      var p = el("div", "pz-piece shape");
+      p.setAttribute("data-id", s.name);
+      p.innerHTML = shapeSVG(s, "", SHAPE_COLORS[s.name]);
+      cell.appendChild(p);
+      tray.appendChild(cell);
+    });
+    return { prompt: "かたち はめて", board: board, tray: tray };
+  }
+
+  function buildEawase(n) {
+    var f = pick(FACES);
+    var rows = [];
+    for (var r = 0; r < n; r++) rows.push(r);
+    var board = el("div", "pz-board frame");
+    var grid = el("div", "pz-grid");
+    grid.style.gridTemplateRows = "repeat(" + n + ", 1fr)";
+    grid.innerHTML = '<div class="pic ghost">' + f.e + '</div>'; // うすい見本
+    rows.forEach(function (r) {
+      var slot = el("div", "pz-slot");
+      slot.setAttribute("data-id", r);
+      grid.appendChild(slot);
+    });
+    board.appendChild(grid);
+    var tray = el("div", "pz-tray strips");
+    mixed(rows).forEach(function (r) {
+      var cell = el("div", "pz-cell strip");
+      var p = el("div", "pz-piece strip");
+      p.setAttribute("data-id", r);
+      p.style.setProperty("--r", r);
+      p.innerHTML = '<div class="pic">' + f.e + '</div>';
+      cell.appendChild(p);
+      tray.appendChild(cell);
+    });
+    board.style.setProperty("--n", n);
+    tray.style.setProperty("--n", n);
+    return { prompt: f.w + " つくって", board: board, tray: tray };
+  }
+
+  function select(p) {
+    if (selected) selected.classList.remove("sel");
+    selected = p;
+    if (p) p.classList.add("sel");
+  }
+
+  function pieceDown(e) {
+    var p = e.currentTarget;
+    if (!pz || pz.locked || drag || p.parentNode.classList.contains("pz-slot")) return;
+    e.preventDefault();
+    drag = { piece: p, id: e.pointerId, x0: e.clientX, y0: e.clientY, moved: false };
+    try { p.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  function pieceMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    if (!drag.moved) {
+      if (Math.abs(dx) + Math.abs(dy) < 12) return; // 指の小さなぶれはタップとして扱う
+      drag.moved = true;
+      select(null);
+      drag.piece.classList.add("lift");
+    }
+    drag.piece.style.transition = "none";
+    drag.piece.style.translate = dx + "px " + dy + "px";
+  }
+  function pieceUp(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag;
+    drag = null;
+    if (!d.moved) { select(selected === d.piece ? null : d.piece); return; } // タップ＝ピースを選ぶ
+    d.piece.classList.remove("lift");
+    var slot = slotNear(d.piece);
+    if (slot) tryPlace(d.piece, slot); else goHome(d.piece);
+  }
+  function pieceCancel(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.piece.classList.remove("lift");
+    goHome(drag.piece);
+    drag = null;
+  }
+
+  // 置いた位置にいちばん近い空きの場所（近くになければ null）。小さい子の手でも入るよう広めに判定する
+  function slotNear(piece) {
+    var r = piece.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    var best = null, bestD = Infinity;
+    Array.prototype.forEach.call(document.querySelectorAll("#pz-area .pz-slot:not(.filled)"), function (s) {
+      var q = s.getBoundingClientRect();
+      var d = Math.hypot(q.left + q.width / 2 - cx, q.top + q.height / 2 - cy);
+      if (d < bestD && d < Math.max(q.width, q.height) * 0.6) { best = s; bestD = d; }
+    });
+    return best;
+  }
+
+  function tryPlace(piece, slot) {
+    if (pz.locked || slot.classList.contains("filled")) return;
+    select(null);
+    if (slot.getAttribute("data-id") !== piece.getAttribute("data-id")) {
+      // ちがう場所：ピースが戻るだけ。そのピースと正しい場所に、そっと枠を出す
+      pz.mistakes++;
+      goHome(piece);
+      piece.classList.add("hint");
+      var right = document.querySelector('#pz-area .pz-slot[data-id="' + piece.getAttribute("data-id") + '"]');
+      if (right) right.classList.add("hint");
+      return;
+    }
+    piece.classList.remove("hint");
+    slot.classList.remove("hint");
+    slot.classList.add("filled");
+    flipInto(piece, slot);
+    if (--pz.left === 0) finishPuzzle();
+  }
+
+  // いま見えている位置から、はまる場所まですべらせて移す
+  function flipInto(piece, slot) {
+    var a = piece.getBoundingClientRect();
+    slot.appendChild(piece);
+    piece.style.transition = "none";
+    piece.style.translate = "0px 0px";
+    var b = piece.getBoundingClientRect();
+    piece.style.translate = (a.left - b.left) + "px " + (a.top - b.top) + "px";
+    void piece.offsetWidth;
+    piece.style.transition = "translate .25s ease";
+    piece.style.translate = "0px 0px";
+  }
+
+  function goHome(piece) {
+    piece.style.transition = "translate .3s ease, scale .15s ease";
+    piece.style.translate = "0px 0px";
+  }
+
+  function finishPuzzle() {
+    pz.locked = true;
+    document.querySelector("#pz-area .pz-board").classList.add("done");
+    record(pz.key, pz.mistakes === 0);
+    later(function () { pz.i++; nextPuzzle(); }, 1200);
+  }
+
   /* ============ スケジュール ============ */
   function renderSched() {
     ensureToday();
@@ -909,18 +1209,18 @@
     html += "<h2>課題別の記録</h2><div class='panel'>";
     var any = false;
     html += "<table><tr><th>課題</th><th class='num'>回数</th><th class='num'>一発正解</th><th class='num'>率</th></tr>";
-    TASK_ORDER.forEach(function (k) {
+    RECORDED.forEach(function (k) {
       var rows = log.filter(function (r) { return r.task === k; });
       if (!rows.length) return;
       any = true;
       var f = rows.reduce(function (s, r) { return s + r.first; }, 0);
       var rate = Math.round(f / rows.length * 100);
-      html += "<tr><td>" + TASKS[k].label + "</td><td class='num'>" + rows.length +
+      html += "<tr><td>" + menuItem(k).label + "</td><td class='num'>" + rows.length +
               "</td><td class='num'>" + f + "</td><td class='num rate'>" + rate + "%</td></tr>";
     });
     html += "</table>";
     if (!any) html += "<p class='muted'>まだ記録がありません。</p>";
-    html += "<p class='note'>「一発正解」＝ 間違えずに選べた回数。ここが伸びているかを見る。<br>回数が少ないうちは率がぶれるので、30回くらい貯まってから傾向を読む。</p>";
+    html += "<p class='note'>「一発正解」＝ 間違えずに選べた回数（パズルは、まちがえずに完成できた回数）。ここが伸びているかを見る。<br>回数が少ないうちは率がぶれるので、30回くらい貯まってから傾向を読む。</p>";
     html += "</div>";
 
     /* --- 日ごと --- */
@@ -979,6 +1279,8 @@
             "・音なし／時間制限なし／問いかけなし／減点なし<br>" +
             "・間違えても×は出ず、選択肢が薄くなるだけ。1回外すと正解の枠がそっと出る<br>" +
             "・1セッション5問。上の丸で「あと何問か」が見える＝終わりが目で見える<br>" +
+            "・パズルは1回3つで、ピースが2→3→4と増える。ちがう場所に置くと戻るだけで、1回まちがえるとそのピースと正しい場所に枠が出る。" +
+            "指で動かすほか、ピースをタップ→置く場所をタップ でも置ける<br>" +
             "・しゃぼんだまは記録なしの自由あそび。逃げたり消えたりせず、8こ割ったらおしまい<br>" +
             "・iPad の「アクセスガイド」（設定→アクセシビリティ）を使うとアプリから出られなくできる<br>" +
             "・保護者メニューは右上を3秒長押し" +
@@ -1026,7 +1328,7 @@
     document.getElementById("copy-log").addEventListener("click", function () {
       var lines = ["日付,課題,一発正解"];
       log.forEach(function (r) {
-        lines.push(dayKey(r.t) + "," + (TASKS[r.task] ? TASKS[r.task].label : r.task) + "," + r.first);
+        lines.push(dayKey(r.t) + "," + (menuItem(r.task) ? menuItem(r.task).label : r.task) + "," + r.first);
       });
       var txt = lines.join("\n");
       function manual() { prompt("コピーしてください", txt); }
