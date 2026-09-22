@@ -18,7 +18,10 @@
     --accent-soft: #e6efe8;
     --warm: #d89a58;
     --shadow: 0 2px 10px rgba(46,42,36,.08);
+    --shape: #4f86c6;
+    --k: 1; /* 絵の大きさの倍率。小さい画面では下で縮める */
   }
+  @media (max-width: 520px), (max-height: 700px) { :root { --k: .74; } }
   :root:not([data-theme="light"]) {
     @media (prefers-color-scheme: dark) {
       --bg: #f7f4ee;
@@ -43,16 +46,16 @@
     -webkit-touch-callout: none;
   }
 
-  body { min-height: 100vh; min-height: 100dvh; }
-
+  /* 画面の高さに固定し、長いリストは各画面の中でスクロールさせる（もどるボタンが常に見える） */
   #app {
     max-width: 1100px; margin: 0 auto;
-    padding: max(20px, env(safe-area-inset-top)) 20px 28px;
-    min-height: 100vh; min-height: 100dvh;
+    padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+             max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    height: 100vh; height: 100dvh;
     display: flex; flex-direction: column;
   }
 
-  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen { display: none; flex: 1; flex-direction: column; min-height: 0; }
   .screen.on { display: flex; }
 
   /* ---------- ホーム ---------- */
@@ -88,7 +91,9 @@
   }
   .back:active { transform: scale(.96); }
 
-  .dots { display: flex; gap: 10px; }
+  .dots { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+  .dots.many { gap: 7px; }
+  .dots.many .dot { width: 14px; height: 14px; }
   .dot {
     width: 18px; height: 18px; border-radius: 50%;
     background: var(--line);
@@ -99,28 +104,45 @@
   /* ---------- 課題メニュー ---------- */
   .menu-grid {
     display: grid; grid-template-columns: repeat(2, 1fr);
-    gap: 18px; align-content: start;
+    gap: 14px; align-content: start;
   }
-  @media (max-width: 560px) { .menu-grid { grid-template-columns: 1fr; } }
+  @media (min-width: 700px) { .menu-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
+  @media (min-width: 1000px) { .menu-grid { grid-template-columns: repeat(4, 1fr); } }
   .menu-card {
     border: none; border-radius: 24px; background: var(--card);
-    box-shadow: var(--shadow); padding: 30px 18px;
+    box-shadow: var(--shadow); padding: 24px 10px;
     font-family: inherit; color: var(--ink); cursor: pointer;
     display: flex; flex-direction: column; align-items: center; gap: 12px;
   }
   .menu-card:active { transform: scale(.97); }
-  .menu-card .ico { font-size: 3.2rem; line-height: 1; }
-  .menu-card .label { font-size: 1.5rem; font-weight: 700; }
+  .menu-card .ico { font-size: 3rem; line-height: 1; }
+  /* 「おおきい ちいさい」が「ちい／さい」のように途中で切れないよう、空白でだけ折り返す */
+  .menu-card .label { font-size: 1.25rem; font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
+  @media (min-width: 700px) {
+    .menu-card { padding: 30px 14px; }
+    .menu-card .ico { font-size: 3.2rem; }
+    .menu-card .label { font-size: 1.45rem; }
+  }
 
   /* ---------- 課題画面 ---------- */
   .prompt {
     text-align: center; font-size: clamp(2rem, 5vw, 2.8rem);
     font-weight: 700; margin: 10px 0 28px; letter-spacing: .04em;
+    word-break: keep-all; overflow-wrap: anywhere;
   }
+  .task-body { display: flex; flex-direction: column; }
+  /* おなじ・かげ の見本。押せる選択肢と区別できるよう、点線の枠だけにする */
+  .sample {
+    display: none; align-self: center;
+    margin: -10px 0 22px; padding: calc(var(--k) * 14px) calc(var(--k) * 30px);
+    border: 3px dashed var(--line); border-radius: 26px;
+  }
+  .sample.on { display: block; }
+  .sample .emo { line-height: 1; display: block; }
   .choices {
-    flex: 1;
+    flex: 1 0 auto;
     display: flex; flex-wrap: wrap;
-    align-items: center; justify-content: center;
+    align-items: center; justify-content: center; align-content: center;
     gap: clamp(16px, 4vw, 40px);
     padding-bottom: 20px;
   }
@@ -128,8 +150,8 @@
     border: 3px solid transparent; background: var(--card);
     border-radius: 28px; box-shadow: var(--shadow);
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; padding: 18px;
-    min-width: 150px; min-height: 150px;
+    cursor: pointer; padding: calc(var(--k) * 18px);
+    min-width: calc(var(--k) * 150px); min-height: calc(var(--k) * 150px);
     transition: opacity .3s ease, border-color .2s ease, transform .12s ease;
     font-family: inherit;
   }
@@ -137,14 +159,21 @@
   .choice .emo { line-height: 1; display: block; }
   .choice.word { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 700; color: var(--ink); }
   .choice.dim { opacity: .22; pointer-events: none; }
-  .choice.right { border-color: var(--accent); background: var(--accent-soft); }
   .choice.hint { border-color: var(--warm); }
+  .choice.right { border-color: var(--accent); background: var(--accent-soft); } /* ヒントの枠より正解の色を優先 */
 
-  .group-box {
-    display: flex; flex-wrap: wrap; gap: 8px;
-    align-items: center; justify-content: center;
-    max-width: 240px;
+  .swatch {
+    display: block; width: calc(var(--k) * 110px); height: calc(var(--k) * 110px);
+    border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(0,0,0,.06);
   }
+  .shape { display: block; width: calc(var(--k) * 110px); height: calc(var(--k) * 110px); fill: var(--shape); }
+  /* かげ：絵文字を黒く塗りつぶしてシルエットにする。正解すると色が戻る */
+  .sil { filter: brightness(0); opacity: .75; transition: filter .4s ease, opacity .4s ease; }
+  .choice.right .sil { filter: none; opacity: 1; }
+
+  .group-box { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .group-row { display: flex; gap: 8px; }
+  .ico-svg { display: block; width: 1em; height: 1em; }
 
   /* ---------- おわり ---------- */
   .finish {
@@ -153,6 +182,25 @@
   }
   .finish .mark { font-size: 5rem; }
   .finish .txt { font-size: 2.2rem; font-weight: 700; }
+
+  /* ---------- しゃぼんだま ---------- */
+  .pond {
+    position: relative; flex: 1; min-height: 0; overflow: hidden;
+    border-radius: 28px; background: linear-gradient(180deg, #e8f1f3, #f7f4ee);
+  }
+  .bubble {
+    position: absolute; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+    background:
+      radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 20%),
+      radial-gradient(circle, hsla(var(--h), 85%, 80%, .22) 0 50%, hsla(var(--h), 75%, 58%, .72) 100%);
+    box-shadow: inset 0 0 0 3px hsla(var(--h), 70%, 55%, .55), 0 6px 18px rgba(46,42,36,.08);
+    animation: bob 3.2s ease-in-out infinite alternate;
+    transition: transform .28s ease, opacity .28s ease;
+  }
+  .bubble.new { transform: scale(.3); opacity: 0; }
+  .bubble.pop { transform: scale(1.35); opacity: 0; pointer-events: none; animation-play-state: paused; }
+  @keyframes bob { from { translate: 0 -10px; } to { translate: 0 10px; } }
+  @media (prefers-reduced-motion: reduce) { .bubble { animation: none; } }
 
   /* ---------- スケジュール ---------- */
   .sched-list { display: flex; flex-direction: column; gap: 14px; }
@@ -174,7 +222,7 @@
   .sched-item.now { border-color: var(--warm); }
   .sched-item.done { opacity: .45; }
   .sched-item.done .check { background: var(--accent); border-color: var(--accent); }
-  .sched-empty { color: var(--ink-soft); font-size: 1.1rem; text-align: center; padding: 40px 10px; line-height: 1.9; }
+  .empty { color: var(--ink-soft); font-size: 1.1rem; text-align: center; padding: 40px 10px; line-height: 1.9; grid-column: 1 / -1; }
 
   /* ---------- 保護者 ---------- */
   .lock-zone {
@@ -213,10 +261,16 @@
     display: flex; gap: 8px; align-items: center;
     padding: 8px 0; border-bottom: 1px solid var(--line);
   }
-  .edit-row .grip { font-size: 1.5rem; }
+  .edit-row .grip { font-size: 1.5rem; width: 1.4em; flex: none; display: flex; justify-content: center; }
   .edit-row .nm { flex: 1; font-size: 1rem; }
+  .vis-row { cursor: pointer; }
+  .vis-row input { width: 24px; height: 24px; margin: 0 4px 0 0; flex: none; accent-color: var(--accent); }
   .note { font-size: .85rem; color: var(--ink-soft); line-height: 1.8; margin-top: 8px; }
-  .scroll { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+  /* 影が切れないよう内側に余白をとり、その分を外側のマイナス余白で戻す */
+  .scroll {
+    overflow-y: auto; flex: 1; min-height: 0; -webkit-overflow-scrolling: touch;
+    margin: -8px -12px 0; padding: 8px 12px 16px;
+  }
 </style>
 </head>
 <body>
@@ -233,7 +287,7 @@
   <!-- 課題メニュー -->
   <section class="screen" id="s-menu">
     <div class="bar"><button class="back" data-go="home">← もどる</button></div>
-    <div class="menu-grid" id="menu-grid"></div>
+    <div class="scroll"><div class="menu-grid" id="menu-grid"></div></div>
   </section>
 
   <!-- 課題 -->
@@ -242,8 +296,20 @@
       <button class="back" data-go="menu">← もどる</button>
       <div class="dots" id="dots"></div>
     </div>
-    <div class="prompt" id="prompt"></div>
-    <div class="choices" id="choices"></div>
+    <div class="scroll task-body" id="task-body">
+      <div class="prompt" id="prompt"></div>
+      <div class="sample" id="sample"></div>
+      <div class="choices" id="choices"></div>
+    </div>
+  </section>
+
+  <!-- しゃぼんだま -->
+  <section class="screen" id="s-bubble">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+      <div class="dots many" id="bubble-dots"></div>
+    </div>
+    <div class="pond" id="pond"></div>
   </section>
 
   <!-- おわり -->
@@ -278,6 +344,7 @@
   var KEY_LOG = "dev_log_v1";
   var KEY_SCHED = "dev_sched_v1";
   var KEY_SCHED_DONE = "dev_sched_done_v1";
+  var KEY_HIDDEN = "dev_hidden_v1";
 
   function load(k, fb) {
     try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; }
@@ -298,6 +365,7 @@
     { ico: "🛏️", label: "ねる" }
   ]);
   var schedDone = load(KEY_SCHED_DONE, { date: "", done: [] });
+  var hidden = load(KEY_HIDDEN, []); // 保護者メニューで「メニューに出さない」にした あそび
 
   function newId() { return "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function esc(s) {
@@ -337,7 +405,7 @@
     timers.forEach(clearTimeout);
     timers = [];
     current = name;
-    var ids = { home: "s-home", menu: "s-menu", task: "s-task", finish: "s-finish", sched: "s-sched", parent: "s-parent" };
+    var ids = { home: "s-home", menu: "s-menu", task: "s-task", bubble: "s-bubble", finish: "s-finish", sched: "s-sched", parent: "s-parent" };
     Object.keys(ids).forEach(function (k) {
       document.getElementById(ids[k]).classList.toggle("on", k === name);
     });
@@ -357,6 +425,39 @@
   var INSECTS = ["🐛", "🦋", "🐝", "🐞", "🦗", "🕷️"];
   var VEG = ["🥕", "🥔", "🧅", "🍅", "🌽", "🥒"];
   var TOYS = ["🚗", "⚽", "🧸", "🪁", "🎈", "🪀"];
+  var ANIMALS = ["🐘", "🦒", "🐢", "🐟", "🐇", "🐦"];
+  var POOL = FRUITS.concat(VEG, TOYS, ANIMALS);
+  // かげ：輪郭がはっきり違うものだけ
+  var KAGE = ["🐘", "🦒", "🐢", "🐟", "🦋", "🦀", "🐇", "🚗", "✈️", "🚲", "🍌", "🍎", "☂️", "🔑", "⭐"];
+  var COLORS = [
+    { name: "あか", c: "#e0533f" },
+    { name: "あお", c: "#3b7dd8" },
+    { name: "きいろ", c: "#f3c21b" },
+    { name: "みどり", c: "#3f9f5a" }
+  ];
+  // かたち：色はそろえて、形だけで選べるようにする
+  var SHAPES = [
+    { name: "まる", svg: '<circle cx="50" cy="50" r="45"/>' },
+    { name: "さんかく", svg: '<polygon points="50,6 96,88 4,88"/>' },
+    { name: "しかく", svg: '<rect x="8" y="8" width="84" height="84" rx="4"/>' },
+    { name: "ほし", svg: '<polygon points="50,5 61.2,36.6 94.7,37.5 68.1,57.9 77.6,90 50,71 22.4,90 31.9,57.9 5.3,37.5 38.8,36.6"/>' },
+    { name: "ハート", svg: '<path d="M50 90C46 86 6 61 6 33 6 18 17 8 30 8c9 0 16 5 20 13 4-8 11-13 20-13 13 0 24 10 24 25 0 28-40 53-44 57z"/>' }
+  ];
+  var FEELINGS = [
+    { w: "うれしい", e: "😄" },
+    { w: "かなしい", e: "😢" },
+    { w: "おこってる", e: "😠" },
+    { w: "びっくり", e: "😲" },
+    { w: "ねむい", e: "😴" }
+  ];
+  var WORDS = [
+    { w: "りんご", e: "🍎" }, { w: "みかん", e: "🍊" }, { w: "いちご", e: "🍓" }, { w: "ぶどう", e: "🍇" },
+    { w: "バナナ", e: "🍌" }, { w: "いぬ", e: "🐕" }, { w: "ねこ", e: "🐈" }, { w: "うさぎ", e: "🐇" },
+    { w: "ぞう", e: "🐘" }, { w: "さかな", e: "🐟" }, { w: "とり", e: "🐦" }, { w: "くるま", e: "🚗" },
+    { w: "でんしゃ", e: "🚃" }, { w: "ひこうき", e: "✈️" }, { w: "ふね", e: "🚢" }, { w: "くつ", e: "👟" },
+    { w: "ぼうし", e: "🧢" }, { w: "かさ", e: "☂️" }, { w: "はな", e: "🌷" }, { w: "つき", e: "🌙" },
+    { w: "いえ", e: "🏠" }
+  ];
 
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function shuffle(a) {
@@ -366,6 +467,18 @@
       var t = a[i]; a[i] = a[j]; a[j] = t;
     }
     return a;
+  }
+  // 混ぜて先頭を正解（key "a"）、続く2つをはずれにした3択を作る。同じものは重ならない
+  function three(items, face) {
+    var sh = shuffle(items);
+    return {
+      target: sh[0],
+      choices: shuffle(["a", "b", "c"].map(function (key, i) {
+        var c = face(sh[i]);
+        c.key = key;
+        return c;
+      }))
+    };
   }
 
   var TASKS = {
@@ -457,23 +570,102 @@
           choices: shuffle(opts)
         };
       }
+    },
+    iro: {
+      ico: "🎨", label: "いろ",
+      make: function () {
+        var t = three(COLORS, function (x) { return { color: x.c }; });
+        return { prompt: t.target.name + " さがして", answer: "a", choices: t.choices };
+      }
+    },
+    katachi: {
+      ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true">' +
+           '<circle cx="29" cy="31" r="21" fill="#e0533f"/><polygon points="73,10 96,50 50,50" fill="#f3c21b"/>' +
+           '<rect x="32" y="56" width="38" height="38" rx="3" fill="#3b7dd8"/></svg>',
+      label: "かたち",
+      make: function () {
+        var t = three(SHAPES, function (x) { return { shape: x.svg }; });
+        return { prompt: t.target.name + " さがして", answer: "a", choices: t.choices };
+      }
+    },
+    onaji: {
+      ico: "🧦", label: "おなじ",
+      make: function () {
+        var t = three(POOL, function (e) { return { emo: e }; });
+        return { prompt: "おなじ さがして", sample: { emo: t.target, size: 96 }, answer: "a", choices: t.choices };
+      }
+    },
+    kage: {
+      ico: "🦒", icoSil: true, label: "かげ",
+      make: function () {
+        var t = three(KAGE, function (e) { return { emo: e, sil: true }; });
+        return { prompt: "かげ さがして", sample: { emo: t.target, size: 96 }, answer: "a", choices: t.choices };
+      }
+    },
+    kimochi: {
+      ico: "😊", label: "きもち",
+      make: function () {
+        var t = three(FEELINGS, function (x) { return { emo: x.e }; });
+        return { prompt: t.target.w + " さがして", answer: "a", choices: t.choices };
+      }
+    },
+    kotoba: {
+      ico: "📖", label: "ことば",
+      make: function () {
+        var t = three(WORDS, function (x) { return { emo: x.e }; });
+        return { prompt: t.target.w, answer: "a", choices: t.choices };
+      }
+    },
+    ooi: {
+      ico: "🧮", label: "おおい すくない",
+      make: function () {
+        var emo = pick(FRUITS);
+        var p = pick([[1, 4], [1, 5], [2, 5]]); // 差は極端に
+        var wantLess = Math.random() < 0.5;
+        var opts = [
+          { group: p[0], emo: emo, key: "less" },
+          { group: p[1], emo: emo, key: "more" }
+        ];
+        return {
+          prompt: wantLess ? "すくない さがして" : "おおい さがして",
+          answer: wantLess ? "less" : "more",
+          choices: shuffle(opts)
+        };
+      }
     }
   };
 
-  var TASK_ORDER = ["size", "count", "sort", "onoma"];
+  var TASK_ORDER = ["size", "count", "sort", "onoma", "iro", "katachi", "onaji", "kage", "kimochi", "kotoba", "ooi"];
   var ROUND = 5; // 1セッションの問題数（終わりが見える）
+
+  // 記録をとらない自由あそび
+  var PLAYS = {
+    bubble: { ico: "🫧", label: "しゃぼんだま", start: startBubbles }
+  };
+  var MENU_ORDER = TASK_ORDER.concat(["bubble"]);
+
+  function menuItem(k) { return TASKS[k] || PLAYS[k]; }
+  function icoHTML(it, cls) {
+    return '<span class="' + cls + (it.icoSil ? " sil" : "") + '">' + it.ico + '</span>';
+  }
 
   function renderMenu() {
     var g = document.getElementById("menu-grid");
     g.innerHTML = "";
-    TASK_ORDER.forEach(function (k) {
-      var t = TASKS[k];
+    MENU_ORDER.forEach(function (k) {
+      if (hidden.indexOf(k) !== -1) return;
+      var it = menuItem(k);
       var b = document.createElement("button");
       b.className = "menu-card";
-      b.innerHTML = '<span class="ico">' + t.ico + '</span><span class="label">' + t.label + '</span>';
-      b.addEventListener("click", function () { startTask(k); });
+      b.innerHTML = icoHTML(it, "ico") + '<span class="label">' + it.label + '</span>';
+      b.addEventListener("click", function () {
+        if (TASKS[k]) startTask(k); else it.start();
+      });
       g.appendChild(b);
     });
+    if (!g.children.length) {
+      g.innerHTML = '<div class="empty">あそびが ありません<br><span class="muted">（右上を3秒おしで 保護者メニュー）</span></div>';
+    }
   }
 
   /* ============ 課題の進行 ============ */
@@ -490,35 +682,46 @@
     cur.q = TASKS[cur.key].make();
     cur.tries = 0;
     cur.locked = false;
-    drawDots();
+    drawDots("dots", ROUND, cur.i);
+    document.getElementById("task-body").scrollTop = 0;
     document.getElementById("prompt").textContent = cur.q.prompt;
+    var sample = document.getElementById("sample");
+    sample.classList.toggle("on", !!cur.q.sample);
+    sample.innerHTML = cur.q.sample ? faceHTML(cur.q.sample) : "";
     var box = document.getElementById("choices");
     box.innerHTML = "";
     cur.q.choices.forEach(function (c) {
       var b = document.createElement("button");
       b.className = "choice";
       b.setAttribute("data-key", c.key);
-      if (c.group) {
-        var inner = '<span class="group-box">';
-        for (var i = 0; i < c.group; i++) {
-          inner += '<span class="emo" style="font-size:60px">' + c.emo + '</span>';
-        }
-        inner += '</span>';
-        b.innerHTML = inner;
-      } else {
-        b.innerHTML = '<span class="emo" style="font-size:' + (c.size || 110) + 'px">' + c.emo + '</span>';
-      }
+      b.innerHTML = faceHTML(c);
       b.addEventListener("click", function () { answer(b, c.key); });
       box.appendChild(b);
     });
   }
 
-  function drawDots() {
-    var d = document.getElementById("dots");
+  // 選択肢・見本の中身（絵文字／いくつかのまとまり／色／かたち）
+  function faceHTML(c) {
+    if (c.group) {
+      // 4こは2+2、5こは3+2 に並べて、いくつあるかを一目で見やすくする（端末の文字幅に左右されない）
+      var rows = c.group === 4 ? [2, 2] : c.group === 5 ? [3, 2] : [c.group];
+      return '<span class="group-box">' + rows.map(function (n) {
+        var row = "";
+        for (var i = 0; i < n; i++) row += '<span class="emo" style="font-size:calc(var(--k) * 60px)">' + c.emo + '</span>';
+        return '<span class="group-row">' + row + '</span>';
+      }).join("") + '</span>';
+    }
+    if (c.color) return '<span class="swatch" style="background:' + c.color + '"></span>';
+    if (c.shape) return '<svg class="shape" viewBox="0 0 100 100" aria-hidden="true">' + c.shape + '</svg>';
+    return '<span class="emo' + (c.sil ? " sil" : "") + '" style="font-size:calc(var(--k) * ' + (c.size || 110) + 'px)">' + c.emo + '</span>';
+  }
+
+  function drawDots(id, total, done) {
+    var d = document.getElementById(id);
     d.innerHTML = "";
-    for (var i = 0; i < ROUND; i++) {
+    for (var i = 0; i < total; i++) {
       var s = document.createElement("span");
-      s.className = "dot" + (i < cur.i ? " done" : "");
+      s.className = "dot" + (i < done ? " done" : "");
       d.appendChild(s);
     }
   }
@@ -549,13 +752,91 @@
     save(KEY_LOG, log);
   }
 
+  /* ============ しゃぼんだま（自由あそび・記録なし） ============ */
+  // 逃げない・消えない・時間制限なし。決まった数を割ったらおしまい
+  var BUBBLES = 8;
+  var HUES = [200, 170, 130, 20, 330, 280]; // 背景に溶けやすい うすい黄色は使わない
+  var bub = null;
+
+  function startBubbles() {
+    go("bubble");
+    bub = { popped: 0, spawned: 0 };
+    document.getElementById("pond").innerHTML = "";
+    drawDots("bubble-dots", BUBBLES, 0);
+    for (var i = 0; i < 3; i++) spawnBubble();
+  }
+
+  function spawnBubble() {
+    if (!bub || bub.spawned >= BUBBLES) return;
+    bub.spawned++;
+    var pond = document.getElementById("pond");
+    var size = Math.max(90, Math.min(170, Math.round(Math.min(pond.clientWidth, pond.clientHeight) * 0.3)));
+    var spot = freeSpot(pond, size);
+    var b = document.createElement("button");
+    b.className = "bubble new";
+    b.setAttribute("aria-label", "しゃぼんだま");
+    b.style.width = b.style.height = size + "px";
+    b.style.left = spot.x + "px";
+    b.style.top = spot.y + "px";
+    b.style.setProperty("--h", pick(HUES));
+    b.style.animationDelay = -(Math.random() * 3).toFixed(2) + "s";
+    // 指が触れた瞬間に割れるよう pointerdown。キーボード操作用に click も受ける
+    b.addEventListener("pointerdown", function () { popBubble(b); });
+    b.addEventListener("click", function () { popBubble(b); });
+    pond.appendChild(b);
+    void b.offsetWidth; // 一度配置を確定させてから、ふわっと出す
+    b.classList.remove("new");
+  }
+
+  // ほかのしゃぼんだまと重ならない場所をさがす（見つからなければ一番すいている所）
+  function freeSpot(pond, size) {
+    var W = pond.clientWidth, H = pond.clientHeight;
+    var others = Array.prototype.filter.call(pond.children, function (o) { return !o.classList.contains("pop"); });
+    var best = null, bestGap = -Infinity;
+    for (var t = 0; t < 40; t++) {
+      var x = 12 + Math.random() * Math.max(0, W - size - 24);
+      var y = 16 + Math.random() * Math.max(0, H - size - 32);
+      var gap = Infinity;
+      others.forEach(function (o) {
+        var s = o.offsetWidth;
+        var dx = (o.offsetLeft + s / 2) - (x + size / 2);
+        var dy = (o.offsetTop + s / 2) - (y + size / 2);
+        gap = Math.min(gap, Math.sqrt(dx * dx + dy * dy) - (s + size) / 2);
+      });
+      if (gap > bestGap) { bestGap = gap; best = { x: x, y: y }; }
+      if (gap > 16) break;
+    }
+    return best;
+  }
+
+  function popBubble(b) {
+    if (!bub || b.classList.contains("pop")) return;
+    b.classList.add("pop");
+    bub.popped++;
+    drawDots("bubble-dots", BUBBLES, bub.popped);
+    later(function () { b.remove(); }, 320);
+    if (bub.popped >= BUBBLES) later(function () { go("finish"); }, 800);
+    else later(spawnBubble, 450);
+  }
+
+  // 画面の向きが変わっても、しゃぼんだまが見える範囲に収まるように
+  window.addEventListener("resize", function () {
+    if (current !== "bubble") return;
+    var pond = document.getElementById("pond");
+    Array.prototype.forEach.call(pond.children, function (b) {
+      var s = b.offsetWidth;
+      b.style.left = Math.max(0, Math.min(b.offsetLeft, pond.clientWidth - s - 12)) + "px";
+      b.style.top = Math.max(0, Math.min(b.offsetTop, pond.clientHeight - s - 16)) + "px";
+    });
+  });
+
   /* ============ スケジュール ============ */
   function renderSched() {
     ensureToday();
     var box = document.getElementById("sched-list");
     box.innerHTML = "";
     if (!sched.length) {
-      box.innerHTML = '<div class="sched-empty">よていが ありません<br><span class="muted">（右上を3秒おしで 保護者メニュー）</span></div>';
+      box.innerHTML = '<div class="empty">よていが ありません<br><span class="muted">（右上を3秒おしで 保護者メニュー）</span></div>';
       return;
     }
     var nowIdx = sched.findIndex(function (it) { return schedDone.done.indexOf(it.id) === -1; });
@@ -650,6 +931,18 @@
     html += "<button class='mini warn' id='clear-log' style='margin-top:12px;margin-left:8px'>記録を消す</button>";
     html += "</div>";
 
+    /* --- メニューに出す あそび --- */
+    html += "<h2>メニューに出す あそび</h2><div class='panel'>";
+    MENU_ORDER.forEach(function (k) {
+      var it = menuItem(k);
+      html += "<label class='edit-row vis-row'><input type='checkbox' data-vis='" + k + "'" +
+              (hidden.indexOf(k) === -1 ? " checked" : "") + ">" +
+              icoHTML(it, "grip") + "<span class='nm'>" + it.label + "</span></label>";
+    });
+    html += "<p class='note'>チェックを外すと、子どものメニューに出なくなります（記録は消えません）。<br>" +
+            "選ぶものが多すぎて迷うときは、いま取り組んでいるものだけにしぼれます。</p>";
+    html += "</div>";
+
     /* --- スケジュール編集 --- */
     html += "<h2>スケジュール</h2><div class='panel' id='sched-edit'>";
     sched.forEach(function (it, i) {
@@ -670,6 +963,7 @@
             "・音なし／時間制限なし／問いかけなし／減点なし<br>" +
             "・間違えても×は出ず、選択肢が薄くなるだけ。1回外すと正解の枠がそっと出る<br>" +
             "・1セッション5問。上の丸で「あと何問か」が見える＝終わりが目で見える<br>" +
+            "・しゃぼんだまは記録なしの自由あそび。逃げたり消えたりせず、8こ割ったらおしまい<br>" +
             "・iPad の「アクセスガイド」（設定→アクセシビリティ）を使うとアプリから出られなくできる<br>" +
             "・保護者メニューは右上を3秒長押し" +
             "</p></div>";
@@ -690,6 +984,14 @@
         var p = gone ? schedDone.done.indexOf(gone.id) : -1;
         if (p !== -1) { schedDone.done.splice(p, 1); save(KEY_SCHED_DONE, schedDone); }
         save(KEY_SCHED, sched); renderParent();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-vis]"), function (cb) {
+      cb.addEventListener("change", function () {
+        var k = cb.getAttribute("data-vis");
+        hidden = hidden.filter(function (x) { return x !== k; });
+        if (!cb.checked) hidden.push(k);
+        save(KEY_HIDDEN, hidden);
       });
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-up]"), function (b) {
