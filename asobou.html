@@ -38,6 +38,9 @@
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
     touch-action: manipulation;
+    /* 長押しで文字選択やメニューが出ないように（入力欄だけは選択できるよう下で戻す） */
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
   }
 
   body { min-height: 100vh; min-height: 100dvh; }
@@ -195,6 +198,7 @@
   input[type="text"] {
     font-family: inherit; font-size: 1rem; padding: 10px 12px;
     border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink);
+    -webkit-user-select: text; user-select: text;
   }
   input.emo-in { width: 64px; text-align: center; font-size: 1.4rem; }
   input.lab-in { flex: 1; min-width: 120px; }
@@ -295,17 +299,44 @@
   ]);
   var schedDone = load(KEY_SCHED_DONE, { date: "", done: [] });
 
+  function newId() { return "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+
+  // チェック済みは「何番目か」ではなく項目ごとの id で覚える（並べ替え・削除でずれないように）
+  sched.forEach(function (it) { if (!it.id) it.id = newId(); });
+  schedDone.done = (schedDone.done || []).map(function (x) {
+    return typeof x === "number" ? sched[x] && sched[x].id : x; // 以前の形式（番号）を id に置き換え
+  }).filter(Boolean);
+  save(KEY_SCHED, sched);
+
   function today() {
     var d = new Date();
     return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
   }
-  if (schedDone.date !== today()) {
+  // 日付が変わっていたらチェックを外す。開きっぱなしでも翌日に戻るよう、読み込み時以外にも呼ぶ
+  function ensureToday() {
+    if (schedDone.date === today()) return false;
     schedDone = { date: today(), done: [] };
     save(KEY_SCHED_DONE, schedDone);
+    return true;
   }
+  ensureToday();
+  save(KEY_SCHED_DONE, schedDone);
 
   /* ============ 画面遷移 ============ */
+  var current = "home";
+  var timers = [];
+  // 画面を切り替えたら、前の画面で予約していた処理（次の問題へ進む など）は取り消す
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
   function go(name) {
+    timers.forEach(clearTimeout);
+    timers = [];
+    current = name;
     var ids = { home: "s-home", menu: "s-menu", task: "s-task", finish: "s-finish", sched: "s-sched", parent: "s-parent" };
     Object.keys(ids).forEach(function (k) {
       document.getElementById(ids[k]).classList.toggle("on", k === name);
@@ -383,10 +414,11 @@
           { name: "おもちゃ", arr: TOYS, otherName: "やさい", other: VEG }
         ];
         var s = pick(sets);
+        var others = shuffle(s.other); // はずれの2つが同じ絵にならないように
         var opts = [
           { emo: pick(s.arr), size: 110, key: "a" },
-          { emo: pick(s.other), size: 110, key: "b" },
-          { emo: pick(s.other), size: 110, key: "c" }
+          { emo: others[0], size: 110, key: "b" },
+          { emo: others[1], size: 110, key: "c" }
         ];
         return {
           prompt: s.name + " さがして",
@@ -457,6 +489,7 @@
     if (cur.i >= ROUND) { go("finish"); return; }
     cur.q = TASKS[cur.key].make();
     cur.tries = 0;
+    cur.locked = false;
     drawDots();
     document.getElementById("prompt").textContent = cur.q.prompt;
     var box = document.getElementById("choices");
@@ -464,6 +497,7 @@
     cur.q.choices.forEach(function (c) {
       var b = document.createElement("button");
       b.className = "choice";
+      b.setAttribute("data-key", c.key);
       if (c.group) {
         var inner = '<span class="group-box">';
         for (var i = 0; i < c.group; i++) {
@@ -490,22 +524,23 @@
   }
 
   function answer(el, key) {
+    // 正解のあと次の問題に移るまでは受け付けない（連打で2回記録されて1問とばないように）
+    if (cur.locked) return;
     var ok = key === cur.q.answer;
     if (!ok) {
       // 減点なし・バツなし。静かに選べなくなるだけ
       cur.tries++;
       el.classList.add("dim");
-      if (cur.tries >= 2) {
-        // 2回目で足場を出す（正解の枠をそっと示す）
-        Array.prototype.forEach.call(document.querySelectorAll(".choice"), function (c) {
-          if (!c.classList.contains("dim")) c.classList.add("hint");
-        });
-      }
+      // 2回目を選ぶときに足場を出す（正解の枠をそっと示す）。
+      // 3択で2回外すまで待つと、その時点で正解しか残っていないため1回目で出す
+      var right = document.querySelector('.choice[data-key="' + cur.q.answer + '"]');
+      if (right) right.classList.add("hint");
       return;
     }
+    cur.locked = true;
     el.classList.add("right");
     record(cur.key, cur.tries === 0);
-    setTimeout(function () { cur.i++; nextQ(); }, 700);
+    later(function () { cur.i++; nextQ(); }, 700);
   }
 
   function record(task, firstTry) {
@@ -516,29 +551,38 @@
 
   /* ============ スケジュール ============ */
   function renderSched() {
+    ensureToday();
     var box = document.getElementById("sched-list");
     box.innerHTML = "";
     if (!sched.length) {
       box.innerHTML = '<div class="sched-empty">よていが ありません<br><span class="muted">（右上を3秒おしで 保護者メニュー）</span></div>';
       return;
     }
-    var nowIdx = sched.findIndex(function (_, i) { return schedDone.done.indexOf(i) === -1; });
+    var nowIdx = sched.findIndex(function (it) { return schedDone.done.indexOf(it.id) === -1; });
     sched.forEach(function (it, i) {
-      var done = schedDone.done.indexOf(i) !== -1;
+      var done = schedDone.done.indexOf(it.id) !== -1;
       var b = document.createElement("button");
       b.className = "sched-item" + (done ? " done" : "") + (i === nowIdx ? " now" : "");
-      b.innerHTML = '<span class="ico">' + it.ico + '</span>' +
-                    '<span class="label">' + it.label + '</span>' +
+      b.innerHTML = '<span class="ico">' + esc(it.ico) + '</span>' +
+                    '<span class="label">' + esc(it.label) + '</span>' +
                     '<span class="check">' + (done ? "✓" : "") + '</span>';
       b.addEventListener("click", function () {
-        var p = schedDone.done.indexOf(i);
-        if (p === -1) schedDone.done.push(i); else schedDone.done.splice(p, 1);
+        ensureToday();
+        var p = schedDone.done.indexOf(it.id);
+        if (p === -1) schedDone.done.push(it.id); else schedDone.done.splice(p, 1);
         save(KEY_SCHED_DONE, schedDone);
         renderSched();
       });
       box.appendChild(b);
     });
   }
+
+  // 開きっぱなしのまま日付が変わったとき・アプリに戻ってきたときに、表示を今日の状態に戻す
+  function refreshDay() {
+    if (ensureToday() && current === "sched") renderSched();
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) refreshDay(); });
+  setInterval(refreshDay, 60 * 1000);
 
   /* ============ 保護者モード ============ */
   var pressTimer = null;
@@ -609,8 +653,8 @@
     /* --- スケジュール編集 --- */
     html += "<h2>スケジュール</h2><div class='panel' id='sched-edit'>";
     sched.forEach(function (it, i) {
-      html += "<div class='edit-row'><span class='grip'>" + it.ico + "</span>" +
-              "<span class='nm'>" + it.label + "</span>" +
+      html += "<div class='edit-row'><span class='grip'>" + esc(it.ico) + "</span>" +
+              "<span class='nm'>" + esc(it.label) + "</span>" +
               "<button class='mini ghost' data-up='" + i + "'>↑</button>" +
               "<button class='mini warn' data-del='" + i + "'>削除</button></div>";
     });
@@ -624,7 +668,7 @@
     /* --- 使い方メモ --- */
     html += "<h2>設計メモ</h2><div class='panel'><p class='note' style='margin-top:0'>" +
             "・音なし／時間制限なし／問いかけなし／減点なし<br>" +
-            "・間違えても×は出ず、選択肢が薄くなるだけ。2回外すと正解の枠がそっと出る<br>" +
+            "・間違えても×は出ず、選択肢が薄くなるだけ。1回外すと正解の枠がそっと出る<br>" +
             "・1セッション5問。上の丸で「あと何問か」が見える＝終わりが目で見える<br>" +
             "・iPad の「アクセスガイド」（設定→アクセシビリティ）を使うとアプリから出られなくできる<br>" +
             "・保護者メニューは右上を3秒長押し" +
@@ -636,13 +680,15 @@
       var ico = document.getElementById("new-ico").value.trim() || "⭐";
       var lab = document.getElementById("new-lab").value.trim();
       if (!lab) return;
-      sched.push({ ico: ico, label: lab });
+      sched.push({ id: newId(), ico: ico, label: lab });
       save(KEY_SCHED, sched);
       renderParent();
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-del]"), function (b) {
       b.addEventListener("click", function () {
-        sched.splice(parseInt(b.getAttribute("data-del"), 10), 1);
+        var gone = sched.splice(parseInt(b.getAttribute("data-del"), 10), 1)[0];
+        var p = gone ? schedDone.done.indexOf(gone.id) : -1;
+        if (p !== -1) { schedDone.done.splice(p, 1); save(KEY_SCHED_DONE, schedDone); }
         save(KEY_SCHED, sched); renderParent();
       });
     });
@@ -662,13 +708,14 @@
     document.getElementById("copy-log").addEventListener("click", function () {
       var lines = ["日付,課題,一発正解"];
       log.forEach(function (r) {
-        lines.push(dayKey(r.t) + "," + TASKS[r.task].label + "," + r.first);
+        lines.push(dayKey(r.t) + "," + (TASKS[r.task] ? TASKS[r.task].label : r.task) + "," + r.first);
       });
       var txt = lines.join("\n");
+      function manual() { prompt("コピーしてください", txt); }
       if (navigator.clipboard) {
-        navigator.clipboard.writeText(txt).then(function () { alert("コピーしました"); });
+        navigator.clipboard.writeText(txt).then(function () { alert("コピーしました"); }, manual);
       } else {
-        prompt("コピーしてください", txt);
+        manual();
       }
     });
   }
