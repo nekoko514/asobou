@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="あそぼう">
+<title>あそぼう</title>
+<style>
+  :root {
+    --bg: #f7f4ee;
+    --card: #ffffff;
+    --ink: #2e2a24;
+    --ink-soft: #6b6157;
+    --line: #e2dbd0;
+    --accent: #5b8c6e;
+    --accent-soft: #e6efe8;
+    --warm: #d89a58;
+    --shadow: 0 2px 10px rgba(46,42,36,.08);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #f7f4ee;
+      --card: #ffffff;
+      --ink: #2e2a24;
+    }
+  }
+  /* 子ども向けのため、ダークモードでも配色を固定する（コントラストと予測可能性を優先） */
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+
+  body { min-height: 100vh; min-height: 100dvh; }
+
+  #app {
+    max-width: 1100px; margin: 0 auto;
+    padding: max(20px, env(safe-area-inset-top)) 20px 28px;
+    min-height: 100vh; min-height: 100dvh;
+    display: flex; flex-direction: column;
+  }
+
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.on { display: flex; }
+
+  /* ---------- ホーム ---------- */
+  .home-wrap {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 28px;
+  }
+  .big-btn {
+    width: min(420px, 86vw);
+    padding: 34px 20px;
+    border: none; border-radius: 28px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    font-size: 2rem; font-weight: 700; color: var(--ink);
+    font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+    cursor: pointer;
+    transition: transform .12s ease;
+  }
+  .big-btn:active { transform: scale(.97); }
+  .big-btn .ico { font-size: 2.6rem; line-height: 1; }
+
+  /* ---------- 共通ヘッダ ---------- */
+  .bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 18px; min-height: 56px;
+  }
+  .back {
+    border: none; background: var(--card); box-shadow: var(--shadow);
+    border-radius: 18px; padding: 14px 22px;
+    font-size: 1.25rem; font-family: inherit; color: var(--ink);
+    cursor: pointer;
+  }
+  .back:active { transform: scale(.96); }
+
+  .dots { display: flex; gap: 10px; }
+  .dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--line);
+    transition: background .2s ease;
+  }
+  .dot.done { background: var(--accent); }
+
+  /* ---------- 課題メニュー ---------- */
+  .menu-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 18px; align-content: start;
+  }
+  @media (max-width: 560px) { .menu-grid { grid-template-columns: 1fr; } }
+  .menu-card {
+    border: none; border-radius: 24px; background: var(--card);
+    box-shadow: var(--shadow); padding: 30px 18px;
+    font-family: inherit; color: var(--ink); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .menu-card:active { transform: scale(.97); }
+  .menu-card .ico { font-size: 3.2rem; line-height: 1; }
+  .menu-card .label { font-size: 1.5rem; font-weight: 700; }
+
+  /* ---------- 課題画面 ---------- */
+  .prompt {
+    text-align: center; font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 700; margin: 10px 0 28px; letter-spacing: .04em;
+  }
+  .choices {
+    flex: 1;
+    display: flex; flex-wrap: wrap;
+    align-items: center; justify-content: center;
+    gap: clamp(16px, 4vw, 40px);
+    padding-bottom: 20px;
+  }
+  .choice {
+    border: 3px solid transparent; background: var(--card);
+    border-radius: 28px; box-shadow: var(--shadow);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 18px;
+    min-width: 150px; min-height: 150px;
+    transition: opacity .3s ease, border-color .2s ease, transform .12s ease;
+    font-family: inherit;
+  }
+  .choice:active { transform: scale(.97); }
+  .choice .emo { line-height: 1; display: block; }
+  .choice.word { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 700; color: var(--ink); }
+  .choice.dim { opacity: .22; pointer-events: none; }
+  .choice.right { border-color: var(--accent); background: var(--accent-soft); }
+  .choice.hint { border-color: var(--warm); }
+
+  .group-box {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    align-items: center; justify-content: center;
+    max-width: 240px;
+  }
+
+  /* ---------- おわり ---------- */
+  .finish {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px;
+  }
+  .finish .mark { font-size: 5rem; }
+  .finish .txt { font-size: 2.2rem; font-weight: 700; }
+
+  /* ---------- スケジュール ---------- */
+  .sched-list { display: flex; flex-direction: column; gap: 14px; }
+  .sched-item {
+    display: flex; align-items: center; gap: 18px;
+    background: var(--card); border-radius: 22px; padding: 18px 20px;
+    box-shadow: var(--shadow); border: 3px solid transparent;
+    cursor: pointer; font-family: inherit; text-align: left; width: 100%;
+    color: var(--ink);
+  }
+  .sched-item .ico { font-size: 2.6rem; line-height: 1; flex: none; }
+  .sched-item .label { font-size: 1.6rem; font-weight: 700; flex: 1; }
+  .sched-item .check {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 3px solid var(--line); flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; color: #fff;
+  }
+  .sched-item.now { border-color: var(--warm); }
+  .sched-item.done { opacity: .45; }
+  .sched-item.done .check { background: var(--accent); border-color: var(--accent); }
+  .sched-empty { color: var(--ink-soft); font-size: 1.1rem; text-align: center; padding: 40px 10px; line-height: 1.9; }
+
+  /* ---------- 保護者 ---------- */
+  .lock-zone {
+    position: fixed; top: 0; right: 0; width: 84px; height: 84px;
+    z-index: 50;
+  }
+  .parent { font-size: .98rem; line-height: 1.75; }
+  .parent h2 { font-size: 1.25rem; margin: 26px 0 10px; }
+  .parent h2:first-of-type { margin-top: 6px; }
+  .panel {
+    background: var(--card); border-radius: 18px; padding: 16px 18px;
+    box-shadow: var(--shadow); margin-bottom: 14px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { padding: 9px 6px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink-soft); font-weight: 600; font-size: .85rem; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .rate { font-weight: 700; }
+  .muted { color: var(--ink-soft); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  input[type="text"] {
+    font-family: inherit; font-size: 1rem; padding: 10px 12px;
+    border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink);
+  }
+  input.emo-in { width: 64px; text-align: center; font-size: 1.4rem; }
+  input.lab-in { flex: 1; min-width: 120px; }
+  .mini {
+    border: none; border-radius: 12px; padding: 10px 16px;
+    font-family: inherit; font-size: .95rem; cursor: pointer;
+    background: var(--accent); color: #fff;
+  }
+  .mini.ghost { background: var(--accent-soft); color: var(--accent); }
+  .mini.warn { background: #f0e2e2; color: #a35a5a; }
+  .edit-row {
+    display: flex; gap: 8px; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--line);
+  }
+  .edit-row .grip { font-size: 1.5rem; }
+  .edit-row .nm { flex: 1; font-size: 1rem; }
+  .note { font-size: .85rem; color: var(--ink-soft); line-height: 1.8; margin-top: 8px; }
+  .scroll { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ホーム -->
+  <section class="screen on" id="s-home">
+    <div class="home-wrap">
+      <button class="big-btn" data-go="menu"><span class="ico">🧩</span>あそぶ</button>
+      <button class="big-btn" data-go="sched"><span class="ico">📋</span>きょう</button>
+    </div>
+  </section>
+
+  <!-- 課題メニュー -->
+  <section class="screen" id="s-menu">
+    <div class="bar"><button class="back" data-go="home">← もどる</button></div>
+    <div class="menu-grid" id="menu-grid"></div>
+  </section>
+
+  <!-- 課題 -->
+  <section class="screen" id="s-task">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="prompt" id="prompt"></div>
+    <div class="choices" id="choices"></div>
+  </section>
+
+  <!-- おわり -->
+  <section class="screen" id="s-finish">
+    <div class="finish">
+      <div class="mark">🌿</div>
+      <div class="txt">おしまい</div>
+      <button class="big-btn" data-go="menu" style="font-size:1.6rem;padding:26px">つぎへ</button>
+    </div>
+  </section>
+
+  <!-- スケジュール -->
+  <section class="screen" id="s-sched">
+    <div class="bar"><button class="back" data-go="home">← もどる</button></div>
+    <div class="scroll"><div class="sched-list" id="sched-list"></div></div>
+  </section>
+
+  <!-- 保護者 -->
+  <section class="screen" id="s-parent">
+    <div class="bar"><button class="back" data-go="home">← とじる</button></div>
+    <div class="scroll parent" id="parent-body"></div>
+  </section>
+
+</div>
+<div class="lock-zone" id="lock-zone"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============ ストレージ ============ */
+  var KEY_LOG = "dev_log_v1";
+  var KEY_SCHED = "dev_sched_v1";
+  var KEY_SCHED_DONE = "dev_sched_done_v1";
+
+  function load(k, fb) {
+    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; }
+    catch (e) { return fb; }
+  }
+  function save(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+  }
+
+  var log = load(KEY_LOG, []);
+  var sched = load(KEY_SCHED, [
+    { ico: "🌅", label: "おきる" },
+    { ico: "🍚", label: "ごはん" },
+    { ico: "👕", label: "きがえ" },
+    { ico: "🚌", label: "えん" },
+    { ico: "🏠", label: "おうち" },
+    { ico: "🛁", label: "おふろ" },
+    { ico: "🛏️", label: "ねる" }
+  ]);
+  var schedDone = load(KEY_SCHED_DONE, { date: "", done: [] });
+
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+  if (schedDone.date !== today()) {
+    schedDone = { date: today(), done: [] };
+    save(KEY_SCHED_DONE, schedDone);
+  }
+
+  /* ============ 画面遷移 ============ */
+  function go(name) {
+    var ids = { home: "s-home", menu: "s-menu", task: "s-task", finish: "s-finish", sched: "s-sched", parent: "s-parent" };
+    Object.keys(ids).forEach(function (k) {
+      document.getElementById(ids[k]).classList.toggle("on", k === name);
+    });
+    if (name === "menu") renderMenu();
+    if (name === "sched") renderSched();
+    if (name === "parent") renderParent();
+  }
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-go]");
+    if (t) go(t.getAttribute("data-go"));
+  });
+
+  /* ============ 課題の定義 ============ */
+  // 共通ルール：問いかけない／2語文／時間制限なし／減点なし
+
+  var FRUITS = ["🍎", "🍊", "🍌", "🍇", "🍓", "🍑"];
+  var INSECTS = ["🐛", "🦋", "🐝", "🐞", "🦗", "🕷️"];
+  var VEG = ["🥕", "🥔", "🧅", "🍅", "🌽", "🥒"];
+  var TOYS = ["🚗", "⚽", "🧸", "🪁", "🎈", "🪀"];
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  var TASKS = {
+    size: {
+      ico: "🔍", label: "おおきい ちいさい",
+      make: function () {
+        var emo = pick(FRUITS.concat(TOYS));
+        var wantSmall = Math.random() < 0.5;
+        // 差は極端に（療育メモ：差が極端なものから）
+        var opts = [
+          { emo: emo, size: 150, key: "big" },
+          { emo: emo, size: 54, key: "small" }
+        ];
+        return {
+          prompt: wantSmall ? "ちいさい さがして" : "おおきい さがして",
+          answer: wantSmall ? "small" : "big",
+          choices: shuffle(opts)
+        };
+      }
+    },
+    count: {
+      ico: "☝️", label: "かず",
+      make: function () {
+        var emo = pick(FRUITS);
+        var n = 1 + Math.floor(Math.random() * 3); // 1〜3
+        var pool = [1, 2, 3].filter(function (x) { return x !== n; });
+        var other = pick(pool);
+        var opts = [
+          { group: n, emo: emo, key: "a" },
+          { group: other, emo: emo, key: "b" }
+        ];
+        return {
+          prompt: n + "こ さがして",
+          answer: "a",
+          choices: shuffle(opts)
+        };
+      }
+    },
+    sort: {
+      ico: "🧺", label: "なかま",
+      make: function () {
+        var sets = [
+          { name: "くだもの", arr: FRUITS, otherName: "むし", other: INSECTS },
+          { name: "むし", arr: INSECTS, otherName: "くだもの", other: FRUITS },
+          { name: "やさい", arr: VEG, otherName: "おもちゃ", other: TOYS },
+          { name: "おもちゃ", arr: TOYS, otherName: "やさい", other: VEG }
+        ];
+        var s = pick(sets);
+        var opts = [
+          { emo: pick(s.arr), size: 110, key: "a" },
+          { emo: pick(s.other), size: 110, key: "b" },
+          { emo: pick(s.other), size: 110, key: "c" }
+        ];
+        return {
+          prompt: s.name + " さがして",
+          answer: "a",
+          choices: shuffle(opts)
+        };
+      }
+    },
+    onoma: {
+      ico: "✨", label: "オノマトペ",
+      make: function () {
+        var items = [
+          { w: "ナデナデ", e: "🤲" },
+          { w: "チョキチョキ", e: "✂️" },
+          { w: "ジャアジャア", e: "🚿" },
+          { w: "ツンツン", e: "👉" },
+          { w: "ゴシゴシ", e: "🧽" },
+          { w: "パチパチ", e: "👏" },
+          { w: "トントン", e: "🔨" },
+          { w: "グルグル", e: "🌀" },
+          { w: "ピカピカ", e: "✨" },
+          { w: "ザーザー", e: "🌧️" },
+          { w: "ブーブー", e: "🚗" },
+          { w: "ワンワン", e: "🐕" }
+        ];
+        var sh = shuffle(items);
+        var target = sh[0];
+        var opts = [
+          { emo: target.e, size: 110, key: "a" },
+          { emo: sh[1].e, size: 110, key: "b" },
+          { emo: sh[2].e, size: 110, key: "c" }
+        ];
+        return {
+          prompt: target.w,
+          answer: "a",
+          choices: shuffle(opts)
+        };
+      }
+    }
+  };
+
+  var TASK_ORDER = ["size", "count", "sort", "onoma"];
+  var ROUND = 5; // 1セッションの問題数（終わりが見える）
+
+  function renderMenu() {
+    var g = document.getElementById("menu-grid");
+    g.innerHTML = "";
+    TASK_ORDER.forEach(function (k) {
+      var t = TASKS[k];
+      var b = document.createElement("button");
+      b.className = "menu-card";
+      b.innerHTML = '<span class="ico">' + t.ico + '</span><span class="label">' + t.label + '</span>';
+      b.addEventListener("click", function () { startTask(k); });
+      g.appendChild(b);
+    });
+  }
+
+  /* ============ 課題の進行 ============ */
+  var cur = null;
+
+  function startTask(key) {
+    cur = { key: key, i: 0, q: null, tries: 0 };
+    go("task");
+    nextQ();
+  }
+
+  function nextQ() {
+    if (cur.i >= ROUND) { go("finish"); return; }
+    cur.q = TASKS[cur.key].make();
+    cur.tries = 0;
+    drawDots();
+    document.getElementById("prompt").textContent = cur.q.prompt;
+    var box = document.getElementById("choices");
+    box.innerHTML = "";
+    cur.q.choices.forEach(function (c) {
+      var b = document.createElement("button");
+      b.className = "choice";
+      if (c.group) {
+        var inner = '<span class="group-box">';
+        for (var i = 0; i < c.group; i++) {
+          inner += '<span class="emo" style="font-size:60px">' + c.emo + '</span>';
+        }
+        inner += '</span>';
+        b.innerHTML = inner;
+      } else {
+        b.innerHTML = '<span class="emo" style="font-size:' + (c.size || 110) + 'px">' + c.emo + '</span>';
+      }
+      b.addEventListener("click", function () { answer(b, c.key); });
+      box.appendChild(b);
+    });
+  }
+
+  function drawDots() {
+    var d = document.getElementById("dots");
+    d.innerHTML = "";
+    for (var i = 0; i < ROUND; i++) {
+      var s = document.createElement("span");
+      s.className = "dot" + (i < cur.i ? " done" : "");
+      d.appendChild(s);
+    }
+  }
+
+  function answer(el, key) {
+    var ok = key === cur.q.answer;
+    if (!ok) {
+      // 減点なし・バツなし。静かに選べなくなるだけ
+      cur.tries++;
+      el.classList.add("dim");
+      if (cur.tries >= 2) {
+        // 2回目で足場を出す（正解の枠をそっと示す）
+        Array.prototype.forEach.call(document.querySelectorAll(".choice"), function (c) {
+          if (!c.classList.contains("dim")) c.classList.add("hint");
+        });
+      }
+      return;
+    }
+    el.classList.add("right");
+    record(cur.key, cur.tries === 0);
+    setTimeout(function () { cur.i++; nextQ(); }, 700);
+  }
+
+  function record(task, firstTry) {
+    log.push({ t: Date.now(), task: task, first: firstTry ? 1 : 0 });
+    if (log.length > 3000) log = log.slice(-3000);
+    save(KEY_LOG, log);
+  }
+
+  /* ============ スケジュール ============ */
+  function renderSched() {
+    var box = document.getElementById("sched-list");
+    box.innerHTML = "";
+    if (!sched.length) {
+      box.innerHTML = '<div class="sched-empty">よていが ありません<br><span class="muted">（右上を3秒おしで 保護者メニュー）</span></div>';
+      return;
+    }
+    var nowIdx = sched.findIndex(function (_, i) { return schedDone.done.indexOf(i) === -1; });
+    sched.forEach(function (it, i) {
+      var done = schedDone.done.indexOf(i) !== -1;
+      var b = document.createElement("button");
+      b.className = "sched-item" + (done ? " done" : "") + (i === nowIdx ? " now" : "");
+      b.innerHTML = '<span class="ico">' + it.ico + '</span>' +
+                    '<span class="label">' + it.label + '</span>' +
+                    '<span class="check">' + (done ? "✓" : "") + '</span>';
+      b.addEventListener("click", function () {
+        var p = schedDone.done.indexOf(i);
+        if (p === -1) schedDone.done.push(i); else schedDone.done.splice(p, 1);
+        save(KEY_SCHED_DONE, schedDone);
+        renderSched();
+      });
+      box.appendChild(b);
+    });
+  }
+
+  /* ============ 保護者モード ============ */
+  var pressTimer = null;
+  var lz = document.getElementById("lock-zone");
+  function startPress() {
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(function () { go("parent"); }, 3000);
+  }
+  function endPress() { clearTimeout(pressTimer); }
+  lz.addEventListener("touchstart", startPress, { passive: true });
+  lz.addEventListener("touchend", endPress);
+  lz.addEventListener("touchcancel", endPress);
+  lz.addEventListener("mousedown", startPress);
+  lz.addEventListener("mouseup", endPress);
+  lz.addEventListener("mouseleave", endPress);
+
+  function dayKey(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + "/" + (d.getMonth() + 1) + "/" + d.getDate();
+  }
+
+  function renderParent() {
+    var body = document.getElementById("parent-body");
+    var html = "";
+
+    /* --- 課題別の記録 --- */
+    html += "<h2>課題別の記録</h2><div class='panel'>";
+    var any = false;
+    html += "<table><tr><th>課題</th><th class='num'>回数</th><th class='num'>一発正解</th><th class='num'>率</th></tr>";
+    TASK_ORDER.forEach(function (k) {
+      var rows = log.filter(function (r) { return r.task === k; });
+      if (!rows.length) return;
+      any = true;
+      var f = rows.reduce(function (s, r) { return s + r.first; }, 0);
+      var rate = Math.round(f / rows.length * 100);
+      html += "<tr><td>" + TASKS[k].label + "</td><td class='num'>" + rows.length +
+              "</td><td class='num'>" + f + "</td><td class='num rate'>" + rate + "%</td></tr>";
+    });
+    html += "</table>";
+    if (!any) html += "<p class='muted'>まだ記録がありません。</p>";
+    html += "<p class='note'>「一発正解」＝ 間違えずに選べた回数。ここが伸びているかを見る。<br>回数が少ないうちは率がぶれるので、30回くらい貯まってから傾向を読む。</p>";
+    html += "</div>";
+
+    /* --- 日ごと --- */
+    html += "<h2>日ごとの一発正解率</h2><div class='panel'>";
+    var byDay = {};
+    log.forEach(function (r) {
+      var d = dayKey(r.t);
+      if (!byDay[d]) byDay[d] = { n: 0, f: 0 };
+      byDay[d].n++; byDay[d].f += r.first;
+    });
+    var days = Object.keys(byDay).slice(-14);
+    if (days.length) {
+      html += "<table><tr><th>日</th><th class='num'>問</th><th class='num'>率</th></tr>";
+      days.forEach(function (d) {
+        var v = byDay[d];
+        html += "<tr><td>" + d + "</td><td class='num'>" + v.n + "</td><td class='num rate'>" +
+                Math.round(v.f / v.n * 100) + "%</td></tr>";
+      });
+      html += "</table>";
+    } else {
+      html += "<p class='muted'>まだ記録がありません。</p>";
+    }
+    html += "<button class='mini ghost' id='copy-log' style='margin-top:12px'>記録をコピー</button>";
+    html += "<button class='mini warn' id='clear-log' style='margin-top:12px;margin-left:8px'>記録を消す</button>";
+    html += "</div>";
+
+    /* --- スケジュール編集 --- */
+    html += "<h2>スケジュール</h2><div class='panel' id='sched-edit'>";
+    sched.forEach(function (it, i) {
+      html += "<div class='edit-row'><span class='grip'>" + it.ico + "</span>" +
+              "<span class='nm'>" + it.label + "</span>" +
+              "<button class='mini ghost' data-up='" + i + "'>↑</button>" +
+              "<button class='mini warn' data-del='" + i + "'>削除</button></div>";
+    });
+    html += "<div class='row' style='margin-top:14px'>" +
+            "<input type='text' class='emo-in' id='new-ico' placeholder='🍚' maxlength='4'>" +
+            "<input type='text' class='lab-in' id='new-lab' placeholder='2語文まで（例：ごはん）' maxlength='12'>" +
+            "<button class='mini' id='add-sched'>追加</button></div>";
+    html += "<p class='note'>ラベルは短く。絵文字は iPhone/iPad のキーボードから入力できます。<br>チェックは毎日 0 時にリセットされます。</p>";
+    html += "</div>";
+
+    /* --- 使い方メモ --- */
+    html += "<h2>設計メモ</h2><div class='panel'><p class='note' style='margin-top:0'>" +
+            "・音なし／時間制限なし／問いかけなし／減点なし<br>" +
+            "・間違えても×は出ず、選択肢が薄くなるだけ。2回外すと正解の枠がそっと出る<br>" +
+            "・1セッション5問。上の丸で「あと何問か」が見える＝終わりが目で見える<br>" +
+            "・iPad の「アクセスガイド」（設定→アクセシビリティ）を使うとアプリから出られなくできる<br>" +
+            "・保護者メニューは右上を3秒長押し" +
+            "</p></div>";
+
+    body.innerHTML = html;
+
+    document.getElementById("add-sched").addEventListener("click", function () {
+      var ico = document.getElementById("new-ico").value.trim() || "⭐";
+      var lab = document.getElementById("new-lab").value.trim();
+      if (!lab) return;
+      sched.push({ ico: ico, label: lab });
+      save(KEY_SCHED, sched);
+      renderParent();
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-del]"), function (b) {
+      b.addEventListener("click", function () {
+        sched.splice(parseInt(b.getAttribute("data-del"), 10), 1);
+        save(KEY_SCHED, sched); renderParent();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-up]"), function (b) {
+      b.addEventListener("click", function () {
+        var i = parseInt(b.getAttribute("data-up"), 10);
+        if (i === 0) return;
+        var t = sched[i - 1]; sched[i - 1] = sched[i]; sched[i] = t;
+        save(KEY_SCHED, sched); renderParent();
+      });
+    });
+    document.getElementById("clear-log").addEventListener("click", function () {
+      if (confirm("記録をすべて消します。よろしいですか？")) {
+        log = []; save(KEY_LOG, log); renderParent();
+      }
+    });
+    document.getElementById("copy-log").addEventListener("click", function () {
+      var lines = ["日付,課題,一発正解"];
+      log.forEach(function (r) {
+        lines.push(dayKey(r.t) + "," + TASKS[r.task].label + "," + r.first);
+      });
+      var txt = lines.join("\n");
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt).then(function () { alert("コピーしました"); });
+      } else {
+        prompt("コピーしてください", txt);
+      }
+    });
+  }
+
+  go("home");
+})();
+</script>
+</body>
+</html>
