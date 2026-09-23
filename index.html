@@ -88,9 +88,12 @@
                  0 7px 0 rgba(59,49,41,.12);
   }
   .logo span:nth-child(1) { color: #ef6b5b; rotate: -8deg; }
-  .logo span:nth-child(2) { color: #f4b23a; rotate: 5deg; translate: 0 -6px; }
-  .logo span:nth-child(3) { color: #4cb47c; rotate: -4deg; }
-  .logo span:nth-child(4) { color: #5b8fe0; rotate: 7deg; translate: 0 -4px; }
+  .logo span:nth-child(2) { color: #f4b23a; rotate: 5deg; animation-delay: .25s; }
+  .logo span:nth-child(3) { color: #4cb47c; rotate: -4deg; animation-delay: .5s; }
+  .logo span:nth-child(4) { color: #5b8fe0; rotate: 7deg; animation-delay: .75s; }
+  /* 1文字ずつ、ゆっくり ゆれる */
+  .logo span { animation: logo-bob 2.4s ease-in-out infinite alternate; }
+  @keyframes logo-bob { from { translate: 0 3px; } to { translate: 0 -9px; } }
 
   /* 押すと沈む、おもちゃのようなボタン（下のふちが厚み） */
   .big-btn {
@@ -164,7 +167,11 @@
     font-family: inherit; color: var(--ink); cursor: pointer;
     display: flex; flex-direction: column; align-items: center; gap: 10px;
     transition: transform .1s ease, box-shadow .1s ease;
+    /* メニューを開くと、カードが順番に ぽんぽんと出る（--i は JS で入れる並び順） */
+    animation: card-in .34s ease-out backwards;
+    animation-delay: calc(var(--i, 0) * .035s);
   }
+  @keyframes card-in { from { opacity: 0; scale: .8; translate: 0 10px; } }
   .menu-card:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--c2), 0 6px 12px rgba(59,49,41,.07); }
   .menu-card .ico {
     font-size: 2.2rem; line-height: 1;
@@ -191,6 +198,9 @@
     box-shadow: 0 5px 0 var(--edge), 0 10px 20px rgba(59,49,41,.06);
     word-break: keep-all; overflow-wrap: anywhere;
   }
+  /* 新しいお題が出たら、ラベルが ちょっと はずむ */
+  .prompt.pop { animation: prompt-pop .35s ease-out; }
+  @keyframes prompt-pop { from { scale: .9; } }
   /* 背の低い画面（横向きのスマホなど）では余白をつめて、スクロールなしで収める */
   @media (max-height: 700px) { .prompt { margin: 2px 0 16px; } }
   /* おなじ・かげ の見本。押せる選択肢と区別できるよう、点線の枠にする */
@@ -223,7 +233,7 @@
     min-width: calc(var(--k) * 150px); min-height: calc(var(--k) * 150px);
     font-family: inherit;
     animation: choice-in .35s ease-out backwards;
-    transition: opacity .3s ease, border-color .2s ease, background-color .2s ease, transform .1s ease, box-shadow .1s ease;
+    transition: opacity .3s ease, scale .3s ease, border-color .2s ease, background-color .2s ease, transform .1s ease, box-shadow .1s ease;
   }
   /* 問題が出るたびに、選択肢が順に ふわっと出る */
   .choice:nth-child(2) { animation-delay: .06s; }
@@ -231,13 +241,15 @@
   @keyframes choice-in { from { opacity: 0; scale: .8; } }
   .choice:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--edge), 0 6px 12px rgba(59,49,41,.07); }
   .choice .emo { line-height: 1; display: block; }
-  .choice.dim { opacity: .25; pointer-events: none; }
+  .choice.dim { opacity: .25; scale: .94; pointer-events: none; } /* 選べなくなったものは、そっとしぼむ */
   .choice.hint { border-color: var(--warm); }
-  /* ヒントの枠より正解の色を優先 */
+  /* ヒントの枠より正解の色を優先。選べたら ぽよんと はずむ */
   .choice.right {
     border-color: var(--accent); background: var(--accent-soft);
     box-shadow: 0 6px 0 var(--accent-edge), 0 12px 26px rgba(63,174,120,.25);
+    animation: pick .5s ease;
   }
+  @keyframes pick { 0% { scale: 1; } 30% { scale: 1.12; } 60% { scale: .97; } 100% { scale: 1; } }
 
   /* いろ：つやのある玉（色は JS で background-color に入れる） */
   .swatch {
@@ -268,6 +280,14 @@
   .stars.many { gap: 6px; }
   .stars.many .dot { width: calc(var(--k) * 44px); height: calc(var(--k) * 44px); }
   .finish .txt { font-size: 2.4rem; font-weight: 800; }
+  /* おしまいに出てくる どうぶつ（毎回かわる）が ぴょんと はねる */
+  .mascot { font-size: clamp(3rem, 11vh, 5rem); line-height: 1; animation: hop 1.7s ease-in-out infinite; }
+  @keyframes hop {
+    0%, 55%, 100% { translate: 0 0; scale: 1 1; }
+    12% { translate: 0 -20px; scale: .94 1.06; }
+    30% { translate: 0 0; scale: 1.06 .94; }
+    40% { translate: 0 -7px; }
+  }
 
   /* ---------- しゃぼんだま・ふうせん ---------- */
   .pond {
@@ -378,8 +398,10 @@
   .pz-piece.strip.sel, .pz-piece.strip.lift { box-shadow: 0 10px 24px rgba(46,42,36,.22); }
   .pz-piece.shape.hint svg { filter: drop-shadow(0 0 3px var(--warm)) drop-shadow(0 0 5px var(--warm)); }
   .pz-piece.strip.hint { box-shadow: 0 0 0 4px var(--warm); }
-  /* はまったピース */
+  /* はまったピース。すべって来たあとに、ぷるんと はずむ */
   .pz-slot .pz-piece { position: absolute; left: 0; top: 0; cursor: default; }
+  .pz-slot .pz-piece.snap { animation: snap .4s ease .22s; }
+  @keyframes snap { 0% { scale: 1; } 35% { scale: 1.08; } 70% { scale: .98; } 100% { scale: 1; } }
   .pz-slot .pz-piece svg { filter: none; }
   .pz-slot .pz-piece.strip { border-radius: 0; box-shadow: none; }
   @media (max-height: 700px) { .pz-area { padding-bottom: 8px; } }
@@ -411,6 +433,7 @@
   .sched-item.now { border-color: var(--warm); background: #fffaf0; }
   .sched-item.done { opacity: .5; }
   .sched-item.done .check { background: var(--accent); border-color: var(--accent); }
+  .sched-item .check.just { animation: star-pop .45s ease-out; } /* いま押した項目だけ はずむ */
   .empty { color: var(--ink-soft); font-size: 1.1rem; text-align: center; padding: 40px 10px; line-height: 1.9; grid-column: 1 / -1; }
 
   /* ---------- 保護者 ---------- */
@@ -463,7 +486,9 @@
 
   /* 動きを減らす設定の端末では、飾りの動きを止める */
   @media (prefers-reduced-motion: reduce) {
-    .screen.on, .choice, .dot.just, .stars .dot, .bubble, .balloon, .pz-board.done { animation: none; }
+    .screen.on, .choice, .dot.just, .stars .dot, .bubble, .balloon, .pz-board.done,
+    .logo span, .menu-card, .choice.right, .prompt.pop, .mascot,
+    .pz-slot .pz-piece.snap, .sched-item .check.just { animation: none; }
     .balloon { transition: transform .25s ease, opacity .25s ease; }
     .spark { display: none; }
   }
@@ -524,6 +549,7 @@
   <!-- おわり -->
   <section class="screen" id="s-finish">
     <div class="finish">
+      <div class="mascot" id="finish-mascot"></div>
       <div class="stars" id="finish-stars"></div>
       <div class="txt">おしまい</div>
       <button class="big-btn next" data-go="menu">つぎへ</button>
@@ -555,6 +581,7 @@
   var KEY_SCHED = "asobou_sched_v1";
   var KEY_SCHED_DONE = "asobou_sched_done_v1";
   var KEY_HIDDEN = "asobou_hidden_v1";
+  var KEY_SOUND = "asobou_sound_v1";
 
   // 以前の名前で保存した記録・スケジュールを引き継ぐ（元のデータは消さない）
   [["dev_log_v1", KEY_LOG], ["dev_sched_v1", KEY_SCHED], ["dev_sched_done_v1", KEY_SCHED_DONE]].forEach(function (p) {
@@ -620,6 +647,63 @@
   ensureToday();
   save(KEY_SCHED_DONE, schedDone);
 
+  /* ============ 音 ============ */
+  // 音は端末の中で作る（音のファイルは使わないので、通信がなくても鳴る）。
+  // やわらかく短い音だけ。まちがえたときの音は出さない。保護者メニューで切り替えられる
+  var soundOn = load(KEY_SOUND, { on: true }).on !== false;
+  var actx = null, master = null;
+
+  function audioCtx() {
+    if (!soundOn) return null;
+    if (!actx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { actx = new AC(); } catch (e) { return null; }
+      master = actx.createGain();
+      master.gain.value = 0.25; // 全体を小さめに（端末の音量で調整してもらう）
+      master.connect(actx.destination);
+    }
+    // iPad では画面を触ったときにしか音を出せないので、そのたびに起こす
+    if (actx.state === "suspended") actx.resume();
+    return actx;
+  }
+
+  // まるい音をひとつ鳴らす（at: 何秒あとに、to: その高さまで下げる）
+  function beep(freq, dur, opt) {
+    var ctx = audioCtx();
+    if (!ctx) return;
+    opt = opt || {};
+    var t0 = ctx.currentTime + (opt.at || 0);
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = opt.type || "sine";
+    o.frequency.setValueAtTime(freq, t0);
+    if (opt.to) o.frequency.exponentialRampToValueAtTime(opt.to, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(opt.vol || 0.4, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g);
+    g.connect(master);
+    o.start(t0);
+    o.stop(t0 + dur + 0.03);
+  }
+
+  var SOUNDS = {
+    tap: function () { beep(523.25, .1, { type: "triangle", vol: .3 }); },
+    right: function () { beep(659.25, .18, { vol: .5 }); beep(987.77, .32, { at: .09, vol: .4 }); },
+    pop: function () { beep(880, .13, { to: 220, vol: .6 }); },                      // しゃぼんだま
+    pop2: function () { beep(560, .15, { to: 150, type: "triangle", vol: .55 }); },  // ふうせん
+    place: function () { beep(392, .12, { type: "triangle", vol: .5 }); beep(784, .09, { vol: .18 }); },
+    soft: function () { beep(300, .1, { vol: .22 }); },                              // ピースが戻るとき（やわらかく短い）
+    check: function () { beep(659.25, .12, { type: "triangle", vol: .4 }); beep(987.77, .2, { at: .08, vol: .3 }); },
+    finish: function () {
+      [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) {
+        beep(f, .32, { at: i * .1, type: "triangle", vol: .4 });
+      });
+    }
+  };
+  function play(name) { if (SOUNDS[name]) SOUNDS[name](); }
+
   /* ============ 画面遷移 ============ */
   var current = "home";
   var timers = [];
@@ -640,7 +724,7 @@
   }
   document.addEventListener("click", function (e) {
     var t = e.target.closest("[data-go]");
-    if (t) go(t.getAttribute("data-go"));
+    if (t) { play("tap"); go(t.getAttribute("data-go")); }
   });
 
   /* ============ 課題の定義 ============ */
@@ -908,17 +992,20 @@
   function renderMenu() {
     var g = document.getElementById("menu-grid");
     g.innerHTML = "";
+    var shown = 0;
     MENU_ORDER.forEach(function (k) {
       if (hidden.indexOf(k) !== -1) return;
       var it = menuItem(k);
       var b = document.createElement("button");
       b.className = "menu-card";
+      b.style.setProperty("--i", shown++); // 順番に出てくるように
       if (TINTS[k]) {
         b.style.setProperty("--c1", TINTS[k][0]);
         b.style.setProperty("--c2", TINTS[k][1]);
       }
       b.innerHTML = icoHTML(it, "ico") + '<span class="label">' + it.label + '</span>';
       b.addEventListener("click", function () {
+        play("tap");
         if (TASKS[k]) startTask(k);
         else if (PUZZLES[k]) startPuzzle(k);
         else it.start();
@@ -958,7 +1045,11 @@
     cur.locked = false;
     drawDots("dots", ROUND, cur.i);
     document.getElementById("task-body").scrollTop = 0;
-    document.getElementById("prompt").textContent = cur.q.prompt;
+    var pr = document.getElementById("prompt");
+    pr.textContent = cur.q.prompt;
+    pr.classList.remove("pop");
+    void pr.offsetWidth; // いったん外してから付け直して、毎回はずませる
+    pr.classList.add("pop");
     var sample = document.getElementById("sample");
     sample.classList.toggle("on", !!cur.q.sample);
     sample.innerHTML = cur.q.sample ? faceHTML(cur.q.sample) : "";
@@ -1030,6 +1121,7 @@
     cur.locked = true;
     el.classList.add("right");
     burst(el, 10);
+    play("right");
     record(cur.key, cur.tries === 0);
     later(function () { cur.i++; nextQ(); }, 700);
   }
@@ -1041,7 +1133,14 @@
   }
 
   // おしまい画面。やった数だけ星がならぶ（正解の数ではなく、やりきった数）
+  var MASCOTS = ["🐻", "🐰", "🐱", "🐶", "🐼", "🐯", "🦊", "🐥", "🐧", "🐸"];
+  var lastMascot = null;
   function finish(n) {
+    var m;
+    do { m = pick(MASCOTS); } while (m === lastMascot); // 毎回ちがう子が出てくる
+    lastMascot = m;
+    document.getElementById("finish-mascot").textContent = m;
+    play("finish");
     var box = document.getElementById("finish-stars");
     box.innerHTML = "";
     box.classList.toggle("many", n > 5);
@@ -1165,6 +1264,7 @@
     } else {
       burst(b, 8);
     }
+    play(balloon ? "pop2" : "pop");
     game.popped++;
     drawDots("pop-dots", POPS, game.popped);
     later(function () { b.remove(); }, 320);
@@ -1373,6 +1473,7 @@
     if (slot.getAttribute("data-id") !== piece.getAttribute("data-id")) {
       // ちがう場所：ピースが戻るだけ。そのピースと正しい場所に、そっと枠を出す
       pz.mistakes++;
+      play("soft");
       goHome(piece);
       piece.classList.add("hint");
       var right = document.querySelector('#pz-area .pz-slot[data-id="' + piece.getAttribute("data-id") + '"]');
@@ -1382,7 +1483,9 @@
     piece.classList.remove("hint");
     slot.classList.remove("hint");
     slot.classList.add("filled");
+    play("place");
     flipInto(piece, slot);
+    piece.classList.add("snap");
     if (--pz.left === 0) finishPuzzle();
   }
 
@@ -1414,7 +1517,7 @@
   }
 
   /* ============ スケジュール ============ */
-  function renderSched() {
+  function renderSched(justId) { // justId: いま押した項目（そこだけ はずませる）
     ensureToday();
     var box = document.getElementById("sched-list");
     box.innerHTML = "";
@@ -1429,13 +1532,15 @@
       b.className = "sched-item" + (done ? " done" : "") + (i === nowIdx ? " now" : "");
       b.innerHTML = '<span class="ico">' + esc(it.ico) + '</span>' +
                     '<span class="label">' + esc(it.label) + '</span>' +
-                    '<span class="check">' + (done ? "✓" : "") + '</span>';
+                    '<span class="check' + (it.id === justId ? " just" : "") + '">' + (done ? "✓" : "") + '</span>';
       b.addEventListener("click", function () {
         ensureToday();
         var p = schedDone.done.indexOf(it.id);
-        if (p === -1) schedDone.done.push(it.id); else schedDone.done.splice(p, 1);
+        var nowDone = p === -1;
+        if (nowDone) schedDone.done.push(it.id); else schedDone.done.splice(p, 1);
         save(KEY_SCHED_DONE, schedDone);
-        renderSched();
+        play(nowDone ? "check" : "tap");
+        renderSched(nowDone ? it.id : null);
       });
       box.appendChild(b);
     });
@@ -1514,6 +1619,15 @@
     html += "<button class='mini warn' id='clear-log' style='margin-top:12px;margin-left:8px'>記録を消す</button>";
     html += "</div>";
 
+    /* --- 音 --- */
+    html += "<h2>音</h2><div class='panel'>";
+    html += "<label class='edit-row vis-row' style='border-bottom:none'><input type='checkbox' id='snd'" +
+            (soundOn ? " checked" : "") + "><span class='nm'>音を出す</span></label>";
+    html += "<p class='note' style='margin-top:0'>やわらかい短い音だけを鳴らします（えらべた・はまった・割れた・おしまい）。" +
+            "まちがえたときの音は出しません。<br>" +
+            "iPad で鳴らないときは、音量と、本体の消音（サイレント）を確かめてください。</p>";
+    html += "</div>";
+
     /* --- メニューに出す あそび --- */
     html += "<h2>メニューに出す あそび</h2><div class='panel'>";
     MENU_ORDER.forEach(function (k) {
@@ -1543,7 +1657,8 @@
 
     /* --- 使い方メモ --- */
     html += "<h2>設計メモ</h2><div class='panel'><p class='note' style='margin-top:0'>" +
-            "・音なし／時間制限なし／問いかけなし／減点なし<br>" +
+            "・時間制限なし／問いかけなし／減点なし<br>" +
+            "・音は「音」の欄で切り替え（初めは出る）。やわらかい短い音だけで、まちがえたときは鳴らない<br>" +
             "・間違えても×は出ず、選択肢が薄くなるだけ。1回外すと正解の枠がそっと出る<br>" +
             "・1セッション5問。上の丸で「あと何問か」が見える＝終わりが目で見える<br>" +
             "・パズルは1回3つで、ピースが2→3→4と増える。ちがう場所に置くと戻るだけで、1回まちがえるとそのピースと正しい場所に枠が出る。" +
@@ -1571,6 +1686,11 @@
         if (p !== -1) { schedDone.done.splice(p, 1); save(KEY_SCHED_DONE, schedDone); }
         save(KEY_SCHED, sched); renderParent();
       });
+    });
+    document.getElementById("snd").addEventListener("change", function () {
+      soundOn = this.checked;
+      save(KEY_SOUND, { on: soundOn });
+      play("check"); // 鳴るようになったか、その場で確かめられる
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-vis]"), function (cb) {
       cb.addEventListener("change", function () {
