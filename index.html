@@ -157,7 +157,7 @@
   }
   @media (min-width: 700px) { .menu-grid { grid-template-columns: repeat(3, 1fr); gap: 22px 18px; } }
   @media (min-width: 1000px) { .menu-grid { grid-template-columns: repeat(4, 1fr); } }
-  @media (min-width: 1100px) { .menu-grid { grid-template-columns: repeat(5, 1fr); } }
+  @media (min-width: 1100px) { .menu-grid { grid-template-columns: repeat(6, 1fr); gap: 16px; } }
   /* 色は あそびごとに JS で --c1（面）--c2（ふち）を入れる */
   .menu-card {
     --c1: var(--card); --c2: var(--edge);
@@ -186,6 +186,8 @@
     .menu-card .ico { font-size: 2.4rem; width: 1.75em; height: 1.75em; }
     .menu-card .label { font-size: 1.35rem; }
   }
+  /* あそびが増えても、iPad の横向きなら1画面に収まるように少しつめる */
+  @media (min-width: 1100px) { .menu-card { padding: 16px 8px 14px; } }
 
   /* ---------- 課題画面 ---------- */
   .task-body { display: flex; flex-direction: column; }
@@ -267,6 +269,59 @@
 
   .group-box { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .group-row { display: flex; gap: 8px; }
+  /* パターン：ならんだ色と、最後の「?」 */
+  .seq { display: flex; align-items: center; gap: calc(var(--k) * 10px); flex-wrap: wrap; justify-content: center; }
+  .seq .swatch { width: calc(var(--k) * 52px); height: calc(var(--k) * 52px); }
+  .seq-q {
+    display: flex; align-items: center; justify-content: center;
+    width: calc(var(--k) * 52px); height: calc(var(--k) * 52px);
+    border: 3px dashed var(--warm); border-radius: 50%;
+    font-size: calc(var(--k) * 28px); font-weight: 800; color: var(--warm);
+  }
+
+  /* ---------- きおく ---------- */
+  .mem-area {
+    --C: min(calc(var(--k) * 112px), 15vh, 20vw);
+    flex: 1 0 auto; display: grid; gap: clamp(8px, 1.6vw, 16px);
+    justify-content: center; align-content: center; padding-bottom: 20px;
+  }
+  .mem-card { position: relative; width: var(--C); height: calc(var(--C) * 1.25); border: none; padding: 0; background: none; cursor: pointer; }
+  .mem-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .38s ease; }
+  .mem-card.open .mem-inner, .mem-card.done .mem-inner { transform: rotateY(180deg); }
+  .mem-face {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    border-radius: 20px; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    box-shadow: 0 5px 0 var(--edge), 0 10px 20px rgba(59,49,41,.08);
+  }
+  .mem-face.back { background: linear-gradient(#ffe3a0, #ffcb63); font-size: calc(var(--C) * .45); }
+  .mem-face.front { background: var(--card); transform: rotateY(180deg); font-size: calc(var(--C) * .55); }
+  .mem-card.done .mem-face.front { background: var(--accent-soft); box-shadow: 0 5px 0 var(--accent-edge); }
+
+  /* ---------- なぞり ---------- */
+  /* 残りの高さいっぱいに置く（中身の大きさで伸びないように flex-basis は 0） */
+  .trace-area { flex: 1 1 0; min-height: calc(var(--k) * 200px); display: flex; align-items: center; justify-content: center; padding-bottom: 16px; }
+  .trace-svg { width: 100%; height: 100%; touch-action: none; }
+  .tr-track, .tr-done { fill: none; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+  .tr-track { stroke: #e8ddca; }
+  .tr-done { stroke: var(--accent); }
+  .tr-goal { fill: var(--warm); }
+  .tr-cursor {
+    fill: #fff; stroke: var(--warm); stroke-width: 2.5;
+    transform-box: fill-box; transform-origin: center;
+    animation: cursor-pulse 1.1s ease-in-out infinite alternate;
+  }
+  @keyframes cursor-pulse { from { scale: .75; } to { scale: 1.25; } }
+
+  /* ---------- おえかき ---------- */
+  .draw-area { flex: 1; min-height: 0; background: var(--card); border-radius: 26px; box-shadow: 0 6px 0 var(--edge), var(--shadow); overflow: hidden; }
+  #draw-canvas { display: block; touch-action: none; }
+  .draw-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; padding: 14px 0 2px; }
+  .pen {
+    width: 46px; height: 46px; border-radius: 50%; border: 4px solid #fff; cursor: pointer; padding: 0;
+    box-shadow: 0 3px 0 rgba(59,49,41,.15), 0 6px 12px rgba(59,49,41,.12);
+  }
+  .pen.on { border-color: var(--ink); scale: 1.12; }
+  .draw-tools .mini { font-size: 1.05rem; padding: 12px 20px; border-radius: 16px; }
   .ico-svg { display: block; width: 1em; height: 1em; }
 
   /* ---------- おわり ---------- */
@@ -487,7 +542,7 @@
   /* 動きを減らす設定の端末では、飾りの動きを止める */
   @media (prefers-reduced-motion: reduce) {
     .screen.on, .choice, .dot.just, .stars .dot, .bubble, .balloon, .pz-board.done,
-    .logo span, .menu-card, .choice.right, .prompt.pop, .mascot,
+    .logo span, .menu-card, .choice.right, .prompt.pop, .mascot, .tr-cursor,
     .pz-slot .pz-piece.snap, .sched-item .check.just { animation: none; }
     .balloon { transition: transform .25s ease, opacity .25s ease; }
     .spark { display: none; }
@@ -546,6 +601,39 @@
     </div>
   </section>
 
+  <!-- きおく -->
+  <section class="screen" id="s-memory">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+      <div class="dots" id="mem-dots"></div>
+    </div>
+    <div class="scroll task-body" id="mem-body">
+      <div class="prompt">おなじ さがして</div>
+      <div class="mem-area" id="mem-area"></div>
+    </div>
+  </section>
+
+  <!-- なぞり -->
+  <section class="screen" id="s-trace">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+      <div class="dots" id="tr-dots"></div>
+    </div>
+    <div class="scroll task-body" id="tr-body">
+      <div class="prompt">ゆびで なぞって</div>
+      <div class="trace-area" id="trace-area"></div>
+    </div>
+  </section>
+
+  <!-- おえかき -->
+  <section class="screen" id="s-draw">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+    </div>
+    <div class="draw-area"><canvas id="draw-canvas"></canvas></div>
+    <div class="draw-tools" id="draw-tools"></div>
+  </section>
+
   <!-- おわり -->
   <section class="screen" id="s-finish">
     <div class="finish">
@@ -582,6 +670,7 @@
   var KEY_SCHED_DONE = "asobou_sched_done_v1";
   var KEY_HIDDEN = "asobou_hidden_v1";
   var KEY_SOUND = "asobou_sound_v1";
+  var KEY_MODE = "asobou_mode_v1";
 
   // 以前の名前で保存した記録・スケジュールを引き継ぐ（元のデータは消さない）
   [["dev_log_v1", KEY_LOG], ["dev_sched_v1", KEY_SCHED], ["dev_sched_done_v1", KEY_SCHED_DONE]].forEach(function (p) {
@@ -615,6 +704,8 @@
   ]);
   var schedDone = load(KEY_SCHED_DONE, { date: "", done: [] });
   var hidden = load(KEY_HIDDEN, []); // 保護者メニューで「メニューに出さない」にした あそび
+  // ちいさい子むけ：えらぶものを2つにして、パズルなどのピースも少なめにする
+  var easy = load(KEY_MODE, { easy: false }).easy === true;
 
   function newId() { return "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function esc(s) {
@@ -703,6 +794,9 @@
     }
   };
   function play(name) { if (SOUNDS[name]) SOUNDS[name](); }
+  // なぞりで、進むほど高くなる音（ドレミソラ…）
+  var SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51];
+  function note(i) { beep(SCALE[i % SCALE.length], .12, { type: "triangle", vol: .28 }); }
 
   /* ============ 画面遷移 ============ */
   var current = "home";
@@ -714,7 +808,11 @@
     timers.forEach(clearTimeout);
     timers = [];
     current = name;
-    var ids = { home: "s-home", menu: "s-menu", task: "s-task", puzzle: "s-puzzle", pop: "s-pop", finish: "s-finish", sched: "s-sched", parent: "s-parent" };
+    var ids = {
+      home: "s-home", menu: "s-menu", task: "s-task", puzzle: "s-puzzle", pop: "s-pop",
+      memory: "s-memory", trace: "s-trace", draw: "s-draw",
+      finish: "s-finish", sched: "s-sched", parent: "s-parent"
+    };
     Object.keys(ids).forEach(function (k) {
       document.getElementById(ids[k]).classList.toggle("on", k === name);
     });
@@ -816,7 +914,7 @@
       }
     },
     count: {
-      ico: "☝️", label: "かず",
+      ico: "☝️", label: "かず", age: 4,
       make: function () {
         var emo = pick(FRUITS);
         var n = 1 + Math.floor(Math.random() * 3); // 1〜3
@@ -834,7 +932,7 @@
       }
     },
     sort: {
-      ico: "🧺", label: "なかま",
+      ico: "🧺", label: "なかま", age: 4,
       make: function () {
         var sets = [
           { name: "くだもの", arr: FRUITS, otherName: "むし", other: INSECTS },
@@ -857,7 +955,7 @@
       }
     },
     onoma: {
-      ico: "✨", label: "オノマトペ",
+      ico: "✨", label: "オノマトペ", age: 4,
       make: function () {
         var items = [
           { w: "ナデナデ", e: "🤲" },
@@ -930,21 +1028,95 @@
       }
     },
     kimochi: {
-      ico: "😊", label: "きもち",
+      ico: "😊", label: "きもち", age: 4,
       make: function () {
         var t = three(FEELINGS, function (x) { return { emo: x.e }; });
         return { prompt: t.target.w + " さがして", answer: "a", choices: t.choices };
       }
     },
     kotoba: {
-      ico: "📖", label: "ことば",
+      ico: "📖", label: "ことば", age: 4,
       make: function () {
         var t = three(WORDS, function (x) { return { emo: x.e }; });
         return { prompt: t.target.w, answer: "a", choices: t.choices };
       }
     },
+    pattern: {
+      ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true">' +
+           '<circle cx="18" cy="50" r="15" fill="#e53935"/><circle cx="50" cy="50" r="15" fill="#1e63d6"/>' +
+           '<circle cx="82" cy="50" r="15" fill="#e53935"/></svg>',
+      label: "パターン", age: 4, noEasy: true,
+      make: function () {
+        // 「あか・あお・あか・あお…」のような くりかえしの、つづきを選ぶ。
+        // くりかえしが見てわかるよう、似た色どうしは使わない
+        var cs = [];
+        shuffle(COLORS).forEach(function (c) {
+          var ok = cs.every(function (x) { return x.near.indexOf(c.name) === -1 && c.near.indexOf(x.name) === -1; });
+          if (ok && cs.length < 4) cs.push(c);
+        });
+        var unit = pick([[0, 1], [0, 0, 1], [0, 1, 2]]).map(function (i) { return cs[i]; });
+        var seq = [];
+        for (var i = 0; i < 6; i++) seq.push({ color: unit[i % unit.length].c });
+        var next = unit[6 % unit.length];
+        // はずれは、同じパターンに出てくる色と、もう1色
+        var others = unit.filter(function (x) { return x !== next; });
+        var wrong = shuffle(others.concat(cs.filter(function (x) { return unit.indexOf(x) === -1; }))).slice(0, 2);
+        return {
+          prompt: "つづき さがして",
+          sample: { seq: seq },
+          answer: "a",
+          choices: shuffle([
+            { color: next.c, key: "a" },
+            { color: wrong[0].c, key: "b" },
+            { color: wrong[1].c, key: "c" }
+          ])
+        };
+      }
+    },
+    suuji: {
+      ico: "🔢", label: "すうじ", age: 4,
+      make: function () {
+        var n = 1 + Math.floor(Math.random() * 6); // 1〜6
+        var emo = pick(FRUITS);
+        // はずれの数は、2以上はなれたものから（差が極端なものから）
+        var far = [1, 2, 3, 4, 5, 6].filter(function (x) { return Math.abs(x - n) >= 2; });
+        var others = shuffle(far).slice(0, 2);
+        return {
+          prompt: String(n),
+          answer: "a",
+          choices: shuffle([
+            { group: n, emo: emo, key: "a" },
+            { group: others[0], emo: emo, key: "b" },
+            { group: others[1], emo: emo, key: "c" }
+          ])
+        };
+      }
+    },
+    hazure: {
+      ico: "🧐", label: "なかまはずれ", age: 4, noEasy: true,
+      make: function () {
+        // 同じ仲間を2つと、ちがう仲間を1つ。「くだものと やさい」のような近い組み合わせは避ける
+        var sets = [FRUITS, VEG, TOYS, ANIMALS, INSECTS];
+        var close = [[FRUITS, VEG], [ANIMALS, INSECTS]];
+        var a, b;
+        do {
+          a = pick(sets);
+          b = pick(sets.filter(function (x) { return x !== a; }));
+        } while (close.some(function (p) { return p.indexOf(a) !== -1 && p.indexOf(b) !== -1; }));
+        var same = shuffle(a).slice(0, 2);
+        return {
+          prompt: "なかまはずれ さがして",
+          answer: "a",
+          choices: shuffle([
+            { emo: pick(b), key: "a" },
+            { emo: same[0], key: "b" },
+            { emo: same[1], key: "c" }
+          ])
+        };
+      }
+    },
     ooi: {
-      ico: "🧮", label: "おおい すくない", pair: true,
+      ico: "🧮", label: "おおい すくない", pair: true, age: 4,
       make: function () {
         var emo = pick(FRUITS);
         var p = pick([[1, 4], [1, 5], [2, 5]]); // 差は極端に
@@ -962,17 +1134,26 @@
     }
   };
 
-  var TASK_ORDER = ["size", "count", "sort", "onoma", "iro", "katachi", "onaji", "kage", "kimochi", "kotoba", "ooi"];
-  var PUZZLE_ORDER = ["hame", "eawase"]; // 中身は下の「パズル」
-  var RECORDED = TASK_ORDER.concat(PUZZLE_ORDER); // 保護者メニューの記録に出すもの
   var ROUND = 5; // 1セッションの問題数（終わりが見える）
 
   // 記録をとらない自由あそび
   var PLAYS = {
     bubble: { ico: "🫧", label: "しゃぼんだま", start: function () { startPop("bubble"); } },
-    balloon: { ico: "🎈", label: "ふうせん", start: function () { startPop("balloon"); } }
+    balloon: { ico: "🎈", label: "ふうせん", start: function () { startPop("balloon"); } },
+    nazori: { ico: "✏️", label: "なぞり", start: startTrace },
+    oekaki: { ico: "🖍️", label: "おえかき", start: startDraw }
   };
-  var MENU_ORDER = RECORDED.concat(["bubble", "balloon"]);
+  // 並び順。今までのあそびの位置は変えず、新しいものは後ろに足す
+  var MENU_ORDER = [
+    "size", "count", "sort", "onoma", "iro", "katachi", "onaji", "kage", "kimochi", "kotoba", "ooi",
+    "hame", "eawase", "bubble", "balloon",
+    "pattern", "suuji", "hazure", "memory", "nazori", "oekaki"
+  ];
+  // 保護者メニューの記録に出すもの（自由あそびは記録をとらない）
+  function recordedKeys() {
+    return MENU_ORDER.filter(function (k) { return TASKS[k] || PUZZLES[k] || GAMES[k]; });
+  }
+  function ageOf(k) { var it = menuItem(k); return (it && it.age) || 2; }
 
   // メニューのカードの色（面・下のふち）。あそびごとに色で見分けやすくする
   var TINTS = {
@@ -980,10 +1161,12 @@
     onoma: ["#e8f6da", "#b5da92"], iro: ["#dff0fb", "#9ccbec"], katachi: ["#ece6fb", "#c1b3ee"],
     onaji: ["#fde4f0", "#eeafcc"], kage: ["#e5e9f3", "#b2bed8"], kimochi: ["#fff0dc", "#f0c592"],
     kotoba: ["#dcf3ef", "#9dd6ca"], ooi: ["#f4ecdd", "#d7c29d"], hame: ["#f6e8d4", "#dbbd93"],
-    eawase: ["#e3eeff", "#a7c3f1"], bubble: ["#dff5f7", "#a0dbe2"], balloon: ["#ffe3ea", "#f2a8bb"]
+    eawase: ["#e3eeff", "#a7c3f1"], bubble: ["#dff5f7", "#a0dbe2"], balloon: ["#ffe3ea", "#f2a8bb"],
+    pattern: ["#e7ecfb", "#b1c0ef"], suuji: ["#fdeede", "#eec79a"], hazure: ["#eef0e2", "#c3caa0"],
+    memory: ["#f0e7fb", "#c8b2ec"], nazori: ["#e2f2ec", "#a4d3c2"], oekaki: ["#fdeaf5", "#efb0d5"]
   };
 
-  function menuItem(k) { return TASKS[k] || PUZZLES[k] || PLAYS[k]; }
+  function menuItem(k) { return TASKS[k] || PUZZLES[k] || GAMES[k] || PLAYS[k]; }
   function icoHTML(it, cls) {
     // かげ の絵は黒くぬるが、まわりの白い丸はそのままにする
     return '<span class="' + cls + '">' + (it.icoSil ? '<span class="sil">' + it.ico + '</span>' : it.ico) + '</span>';
@@ -1008,6 +1191,7 @@
         play("tap");
         if (TASKS[k]) startTask(k);
         else if (PUZZLES[k]) startPuzzle(k);
+        else if (GAMES[k]) GAMES[k].start();
         else it.start();
       });
       g.appendChild(b);
@@ -1035,6 +1219,11 @@
     // 同じ答えを続けて出さない（答えが2通りしかない課題は、3回続けて同じにならなければよい）
     var q, n = 0;
     do { q = T.make(); } while (n++ < 30 && repeated(h.t, targetOf(q), T.pair ? 2 : 1));
+    // ちいさい子むけのときは、はずれをひとつ減らして2つから選ぶ
+    if (easy && !T.noEasy && q.choices.length > 2) {
+      var drop = q.choices.filter(function (c) { return c.key !== q.answer; })[0];
+      q.choices = q.choices.filter(function (c) { return c !== drop; });
+    }
     // 正解の場所も、3回続けて同じにならないように並べ直す（場所だけで選べてしまわないように）
     n = 0;
     while (n++ < 30 && repeated(h.p, answerPos(q), 2)) q.choices = shuffle(q.choices);
@@ -1079,12 +1268,19 @@
 
   // 選択肢・見本の中身（絵文字／いくつかのまとまり／色／かたち）
   function faceHTML(c) {
+    if (c.seq) {
+      // パターン：ならんでいるものと、最後の「?」
+      return '<span class="seq">' + c.seq.map(function (x) {
+        return '<span class="seq-item">' + faceHTML(x) + '</span>';
+      }).join("") + '<span class="seq-item seq-q">?</span></span>';
+    }
     if (c.group) {
-      // 4こは2+2、5こは3+2 に並べて、いくつあるかを一目で見やすくする（端末の文字幅に左右されない）
-      var rows = c.group === 4 ? [2, 2] : c.group === 5 ? [3, 2] : [c.group];
+      // 4こは2+2、5こは3+2、6こは3+3 に並べて、いくつあるかを一目で見やすくする（端末の文字幅に左右されない）
+      var rows = c.group === 6 ? [3, 3] : c.group === 5 ? [3, 2] : c.group === 4 ? [2, 2] : [c.group];
+      var fs = c.group > 3 ? 48 : 60;
       return '<span class="group-box">' + rows.map(function (n) {
         var row = "";
-        for (var i = 0; i < n; i++) row += '<span class="emo" style="font-size:calc(var(--k) * 60px)">' + c.emo + '</span>';
+        for (var i = 0; i < n; i++) row += '<span class="emo" style="font-size:calc(var(--k) * ' + fs + 'px)">' + c.emo + '</span>';
         return '<span class="group-row">' + row + '</span>';
       }).join("") + '</span>';
     }
@@ -1301,9 +1497,9 @@
            '<rect x="4" y="34" width="92" height="60" rx="12" fill="#e3c99c"/>' +
            '<circle cx="30" cy="64" r="17" fill="#e0533f"/><polygon points="70,49 87,79 53,79" fill="#b9955f"/>' +
            '<polygon points="70,4 88,36 52,36" fill="#f3c21b"/></svg>',
-      label: "かたちはめ", sizes: [2, 3, 4], build: buildHame
+      label: "かたちはめ", sizes: [2, 3, 4], easySizes: [2, 2, 3], build: buildHame
     },
-    eawase: { ico: "🧩", label: "えあわせ", sizes: [2, 3, 4], build: buildEawase }
+    eawase: { ico: "🧩", label: "えあわせ", sizes: [2, 3, 4], easySizes: [2, 2, 3], build: buildEawase }
   };
 
   var pz = null;       // いま遊んでいるパズル
@@ -1318,14 +1514,15 @@
 
   function nextPuzzle() {
     var P = PUZZLES[pz.key];
-    if (pz.i >= P.sizes.length) { finish(P.sizes.length); return; }
+    var sizes = (easy && P.easySizes) || P.sizes;
+    if (pz.i >= sizes.length) { finish(sizes.length); return; }
     drag = null;
     selected = null;
     pz.mistakes = 0;
     pz.locked = false;
-    drawDots("pz-dots", P.sizes.length, pz.i);
-    var q = P.build(P.sizes[pz.i]);
-    pz.left = P.sizes[pz.i];
+    drawDots("pz-dots", sizes.length, pz.i);
+    var q = P.build(sizes[pz.i]);
+    pz.left = sizes[pz.i];
     document.getElementById("pz-body").scrollTop = 0;
     document.getElementById("pz-prompt").textContent = q.prompt;
     var area = document.getElementById("pz-area");
@@ -1516,6 +1713,265 @@
     later(function () { pz.i++; nextPuzzle(); }, 1200);
   }
 
+  /* ============ きおく・なぞり・おえかき ============ */
+  var GAMES = {
+    memory: {
+      ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true">' +
+           '<rect x="8" y="22" width="40" height="56" rx="7" fill="#f0c65a" transform="rotate(-8 28 50)"/>' +
+           '<rect x="52" y="22" width="40" height="56" rx="7" fill="#fff" stroke="#d9c9ae" stroke-width="3"/>' +
+           '<circle cx="72" cy="50" r="11" fill="#e0533f"/></svg>',
+      label: "きおく", age: 2, sizes: [2, 3, 4], easySizes: [2, 2, 3], start: startMemory
+    }
+  };
+
+  /* --- きおく（同じ絵を2枚さがす） --- */
+  var mem = null;
+
+  function startMemory() {
+    go("memory");
+    mem = { i: 0 };
+    nextMemory();
+  }
+
+  function nextMemory() {
+    var sizes = (easy && GAMES.memory.easySizes) || GAMES.memory.sizes;
+    if (mem.i >= sizes.length) { finish(sizes.length); return; }
+    var pairs = sizes[mem.i];
+    mem.open = [];
+    mem.left = pairs;
+    mem.mistakes = 0;
+    mem.lock = false;
+    drawDots("mem-dots", sizes.length, mem.i);
+    var area = document.getElementById("mem-area");
+    area.innerHTML = "";
+    area.style.gridTemplateColumns = "repeat(" + (pairs >= 4 ? 4 : pairs === 3 ? 3 : 2) + ", auto)";
+    var kinds = shuffle(POOL).slice(0, pairs);
+    shuffle(kinds.concat(kinds)).forEach(function (e) {
+      var c = el("button", "mem-card");
+      c.setAttribute("data-id", e);
+      c.innerHTML = '<span class="mem-inner"><span class="mem-face back">⭐</span>' +
+                    '<span class="mem-face front">' + e + '</span></span>';
+      c.addEventListener("click", function () { flipCard(c); });
+      area.appendChild(c);
+    });
+  }
+
+  function flipCard(c) {
+    if (!mem || mem.lock || c.classList.contains("open") || c.classList.contains("done")) return;
+    c.classList.add("open");
+    play("tap");
+    mem.open.push(c);
+    if (mem.open.length < 2) return;
+    var a = mem.open[0], b = mem.open[1];
+    mem.open = [];
+    if (a.getAttribute("data-id") === b.getAttribute("data-id")) {
+      mem.left--;
+      play("right");
+      later(function () {
+        a.classList.add("done");
+        b.classList.add("done");
+        burst(a, 6);
+        burst(b, 6);
+        if (mem.left === 0) {
+          mem.lock = true;
+          record("memory", mem.mistakes === 0);
+          later(function () { mem.i++; nextMemory(); }, 1100);
+        }
+      }, 280);
+    } else {
+      // そろわなかったら、そっと裏に戻るだけ（音もバツも出さない）
+      mem.mistakes++;
+      mem.lock = true;
+      later(function () {
+        a.classList.remove("open");
+        b.classList.remove("open");
+        mem.lock = false;
+      }, 950);
+    }
+  }
+
+  /* --- なぞり（線をゆびでたどる。記録なし） --- */
+  var TRACE_PATHS = [
+    "M 8 50 L 92 50",                                  // よこ線
+    "M 12 78 C 34 22, 56 88, 90 30",                   // なみ
+    "M 12 82 L 34 22 L 56 82 L 78 22",                 // ぎざぎざ
+    "M 50 12 A 38 38 0 1 1 49.6 12",                   // まる
+    "M 16 20 L 84 20 L 16 80 L 84 80",                 // ジグザグ（よこ）
+    "M 20 85 C 20 30, 80 30, 80 85"                    // やま
+  ];
+  var TRACE_ROUNDS = 3;
+  var tr = null;
+
+  function startTrace() {
+    go("trace");
+    tr = { i: 0, order: shuffle(TRACE_PATHS) };
+    nextTrace();
+  }
+
+  function nextTrace() {
+    if (tr.i >= TRACE_ROUNDS) { finish(TRACE_ROUNDS); return; }
+    drawDots("tr-dots", TRACE_ROUNDS, tr.i);
+    var d = tr.order[tr.i];
+    var area = document.getElementById("trace-area");
+    area.innerHTML =
+      '<svg class="trace-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">' +
+      '<path class="tr-track" d="' + d + '"/><path class="tr-done" d="' + d + '"/>' +
+      '<circle class="tr-goal" r="4.5"/><circle class="tr-cursor" r="6"/></svg>';
+    var svg = area.querySelector("svg");
+    var track = svg.querySelector(".tr-track");
+    var len = track.getTotalLength();
+    var n = 16;
+    var pts = [];
+    for (var i = 0; i <= n; i++) pts.push(track.getPointAtLength(len * i / n));
+    tr.svg = svg;
+    tr.done = svg.querySelector(".tr-done");
+    tr.cursor = svg.querySelector(".tr-cursor");
+    tr.pts = pts;
+    tr.len = len;
+    tr.n = n;
+    tr.at = 0;
+    tr.locked = false;
+    tr.done.style.strokeDasharray = len;
+    tr.done.style.strokeDashoffset = len;
+    var goal = svg.querySelector(".tr-goal");
+    goal.setAttribute("cx", pts[n].x);
+    goal.setAttribute("cy", pts[n].y);
+    moveCursor();
+    svg.addEventListener("pointerdown", traceMove);
+    svg.addEventListener("pointermove", traceMove);
+  }
+
+  function moveCursor() {
+    var p = tr.pts[Math.min(tr.at + 1, tr.n)];
+    tr.cursor.setAttribute("cx", p.x);
+    tr.cursor.setAttribute("cy", p.y);
+  }
+
+  // ゆびが次の点に近づいたら、そこまで線がのびる（少しずれても進むので、小さい子でもできる）
+  function traceMove(e) {
+    if (!tr || tr.locked) return;
+    if (e.type === "pointermove" && e.pointerType === "mouse" && !e.buttons) return;
+    e.preventDefault();
+    var m = tr.svg.getScreenCTM();
+    if (!m) return;
+    var pt = tr.svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    var p = pt.matrixTransform(m.inverse());
+    var next = tr.pts[tr.at + 1];
+    if (!next) return;
+    var dx = p.x - next.x, dy = p.y - next.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 11) return;
+    tr.at++;
+    tr.done.style.strokeDashoffset = tr.len * (1 - tr.at / tr.n);
+    note(tr.at - 1); // 進むほど音が高くなる
+    moveCursor();
+    if (tr.at >= tr.n) {
+      tr.locked = true;
+      burst(tr.cursor, 12);
+      play("right");
+      later(function () { tr.i++; nextTrace(); }, 1100);
+    }
+  }
+
+  /* --- おえかき（自由あそび・記録なし） --- */
+  var DRAW_COLORS = ["#e53935", "#fb8c00", "#fdd835", "#43a047", "#1e88e5", "#8e44ad", "#8d5a2b", "#333333"];
+  var draw = null;
+
+  function startDraw() {
+    go("draw");
+    var cv = document.getElementById("draw-canvas");
+    draw = { color: DRAW_COLORS[0], drawing: false, ctx: cv.getContext("2d"), cv: cv };
+    var tools = document.getElementById("draw-tools");
+    tools.innerHTML = "";
+    DRAW_COLORS.forEach(function (c, i) {
+      var b = el("button", "pen" + (i === 0 ? " on" : ""));
+      b.style.background = c;
+      b.addEventListener("click", function () {
+        draw.color = c;
+        Array.prototype.forEach.call(tools.querySelectorAll(".pen"), function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        play("tap");
+      });
+      tools.appendChild(b);
+    });
+    var clear = el("button", "mini ghost");
+    clear.textContent = "けす";
+    clear.addEventListener("click", function () { clearDraw(); play("soft"); });
+    tools.appendChild(clear);
+    var done = el("button", "mini");
+    done.textContent = "できた";
+    done.addEventListener("click", function () { play("tap"); finish(0); });
+    tools.appendChild(done);
+    fitCanvas(false);
+    cv.addEventListener("pointerdown", drawStart);
+    cv.addEventListener("pointermove", drawMove);
+    cv.addEventListener("pointerup", drawEnd);
+    cv.addEventListener("pointercancel", drawEnd);
+  }
+
+  // 画面の大きさに合わせる。向きを変えても、描いた絵は残す
+  function fitCanvas(keep) {
+    var cv = draw.cv;
+    var r = cv.parentNode.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var old = keep && cv.width ? cv.toDataURL() : null;
+    cv.width = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    cv.style.width = r.width + "px";
+    cv.style.height = r.height + "px";
+    var ctx = draw.ctx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 14;
+    if (old) {
+      var img = new Image();
+      img.onload = function () { ctx.drawImage(img, 0, 0, r.width, r.height); };
+      img.src = old;
+    }
+  }
+
+  function clearDraw() {
+    draw.ctx.save();
+    draw.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    draw.ctx.clearRect(0, 0, draw.cv.width, draw.cv.height);
+    draw.ctx.restore();
+  }
+
+  function drawPoint(e) {
+    var r = draw.cv.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  function drawStart(e) {
+    e.preventDefault();
+    draw.drawing = true;
+    try { draw.cv.setPointerCapture(e.pointerId); } catch (err) {}
+    var p = drawPoint(e);
+    draw.ctx.strokeStyle = draw.color;
+    draw.ctx.beginPath();
+    draw.ctx.moveTo(p.x, p.y);
+    draw.ctx.lineTo(p.x + 0.1, p.y); // 点を打っただけでも描けるように
+    draw.ctx.stroke();
+    draw.last = p;
+  }
+  function drawMove(e) {
+    if (!draw || !draw.drawing) return;
+    e.preventDefault();
+    var p = drawPoint(e);
+    draw.ctx.strokeStyle = draw.color;
+    draw.ctx.beginPath();
+    draw.ctx.moveTo(draw.last.x, draw.last.y);
+    draw.ctx.lineTo(p.x, p.y);
+    draw.ctx.stroke();
+    draw.last = p;
+  }
+  function drawEnd() { if (draw) draw.drawing = false; }
+
+  window.addEventListener("resize", function () {
+    if (current === "draw" && draw) fitCanvas(true);
+  });
+
   /* ============ スケジュール ============ */
   function renderSched(justId) { // justId: いま押した項目（そこだけ はずませる）
     ensureToday();
@@ -1581,7 +2037,7 @@
     html += "<h2>課題別の記録</h2><div class='panel'>";
     var any = false;
     html += "<table><tr><th>課題</th><th class='num'>回数</th><th class='num'>一発正解</th><th class='num'>率</th></tr>";
-    RECORDED.forEach(function (k) {
+    recordedKeys().forEach(function (k) {
       var rows = log.filter(function (r) { return r.task === k; });
       if (!rows.length) return;
       any = true;
@@ -1628,13 +2084,24 @@
             "iPad で鳴らないときは、音量と、本体の消音（サイレント）を確かめてください。</p>";
     html += "</div>";
 
+    /* --- あそぶ子に合わせる --- */
+    html += "<h2>あそぶ子に合わせる</h2><div class='panel'>";
+    html += "<div class='row'><button class='mini" + (easy ? "" : " ghost") + "' data-preset='young'>2〜3さい</button>" +
+            "<button class='mini" + (easy ? " ghost" : "") + "' data-preset='old'>4さい〜</button></div>";
+    html += "<p class='note'>2〜3さい：えらぶものを2つにして、パズルなどのピースも少なめにします。" +
+            "読めなくても遊べるあそびだけメニューに出します。<br>" +
+            "4さい〜：3つから選ぶ、ぜんぶのあそびを出します。<br>" +
+            "下のチェックで、1つずつ変えることもできます。</p>";
+    html += "</div>";
+
     /* --- メニューに出す あそび --- */
     html += "<h2>メニューに出す あそび</h2><div class='panel'>";
     MENU_ORDER.forEach(function (k) {
       var it = menuItem(k);
       html += "<label class='edit-row vis-row'><input type='checkbox' data-vis='" + k + "'" +
               (hidden.indexOf(k) === -1 ? " checked" : "") + ">" +
-              icoHTML(it, "grip") + "<span class='nm'>" + it.label + "</span></label>";
+              icoHTML(it, "grip") + "<span class='nm'>" + it.label +
+              "<span class='muted' style='font-size:.8em'>　" + (ageOf(k) >= 4 ? "4さい〜" : "2さい〜") + "</span></span></label>";
     });
     html += "<p class='note'>チェックを外すと、子どものメニューに出なくなります（記録は消えません）。<br>" +
             "選ぶものが多すぎて迷うときは、いま取り組んでいるものだけにしぼれます。</p>";
@@ -1660,7 +2127,9 @@
             "・時間制限なし／問いかけなし／減点なし<br>" +
             "・音は「音」の欄で切り替え（初めは出る）。やわらかい短い音だけで、まちがえたときは鳴らない<br>" +
             "・間違えても×は出ず、選択肢が薄くなるだけ。1回外すと正解の枠がそっと出る<br>" +
-            "・1セッション5問。上の丸で「あと何問か」が見える＝終わりが目で見える<br>" +
+            "・1セッション5問。上の星で「あと何問か」が見える＝終わりが目で見える<br>" +
+            "・「あそぶ子に合わせる」で 2〜3さい にすると、選ぶものが2つになり、パズル・きおくのピースも少なくなる<br>" +
+            "・なぞり／おえかきは記録なし。なぞりは、ゆびが少しずれても進むので、小さい子でも最後まで行ける<br>" +
             "・パズルは1回3つで、ピースが2→3→4と増える。ちがう場所に置くと戻るだけで、1回まちがえるとそのピースと正しい場所に枠が出る。" +
             "指で動かすほか、ピースをタップ→置く場所をタップ でも置ける<br>" +
             "・同じ答えは続けて出さない（2通りしかない課題は3回続けない）。正解の場所も3回続けて同じにしない<br>" +
@@ -1685,6 +2154,17 @@
         var p = gone ? schedDone.done.indexOf(gone.id) : -1;
         if (p !== -1) { schedDone.done.splice(p, 1); save(KEY_SCHED_DONE, schedDone); }
         save(KEY_SCHED, sched); renderParent();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-preset]"), function (b) {
+      b.addEventListener("click", function () {
+        var young = b.getAttribute("data-preset") === "young";
+        easy = young;
+        save(KEY_MODE, { easy: easy });
+        hidden = young ? MENU_ORDER.filter(function (k) { return ageOf(k) >= 4; }) : [];
+        save(KEY_HIDDEN, hidden);
+        play("check");
+        renderParent();
       });
     });
     document.getElementById("snd").addEventListener("change", function () {
