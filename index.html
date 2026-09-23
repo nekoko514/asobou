@@ -303,7 +303,11 @@
   .trace-svg { width: 100%; height: 100%; touch-action: none; }
   .tr-track, .tr-done { fill: none; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
   .tr-track { stroke: #e8ddca; }
-  .tr-track.later { opacity: .4; } /* ひらがなで、まだ なぞらない画は うすく */
+  .tr-track.later { opacity: .4; } /* まだ なぞらない画は うすく */
+  /* 文字のときは、お手本の字を後ろに置き、いまなぞる画だけを少し濃く見せる */
+  .tr-glyph { fill: #eadfcb; font-weight: 800; }
+  .on-letter .tr-track { stroke: transparent; }
+  .on-letter .tr-track.now { stroke: #d8c6a4; }
   .tr-done { stroke: var(--accent); }
   .kana-ico { font-weight: 800; }
   .tr-goal { fill: var(--warm); }
@@ -1143,14 +1147,16 @@
     bubble: { ico: "🫧", label: "しゃぼんだま", start: function () { startPop("bubble"); } },
     balloon: { ico: "🎈", label: "ふうせん", start: function () { startPop("balloon"); } },
     nazori: { ico: "✏️", label: "なぞり", start: function () { startTrace("shape"); } },
-    kana: { ico: '<span class="kana-ico">あ</span>', label: "あいうえお", age: 4, start: function () { startTrace("kana"); } },
+    kana: { ico: '<span class="kana-ico">あ</span>', label: "あいうえお", age: 4, start: function () { startTrace("hira"); } },
+    kata: { ico: '<span class="kana-ico">ア</span>', label: "カタカナ", age: 4, start: function () { startTrace("kata"); } },
+    numtrace: { ico: '<span class="kana-ico">1</span>', label: "すうじ なぞり", age: 4, start: function () { startTrace("num"); } },
     oekaki: { ico: "🖍️", label: "おえかき", start: startDraw }
   };
   // 並び順。今までのあそびの位置は変えず、新しいものは後ろに足す
   var MENU_ORDER = [
     "size", "count", "sort", "onoma", "iro", "katachi", "onaji", "kage", "kimochi", "kotoba", "ooi",
     "hame", "eawase", "bubble", "balloon",
-    "pattern", "suuji", "hazure", "memory", "nazori", "kana", "oekaki"
+    "pattern", "suuji", "hazure", "memory", "nazori", "kana", "kata", "numtrace", "oekaki"
   ];
   // 保護者メニューの記録に出すもの（自由あそびは記録をとらない）
   function recordedKeys() {
@@ -1167,7 +1173,7 @@
     eawase: ["#e3eeff", "#a7c3f1"], bubble: ["#dff5f7", "#a0dbe2"], balloon: ["#ffe3ea", "#f2a8bb"],
     pattern: ["#e7ecfb", "#b1c0ef"], suuji: ["#fdeede", "#eec79a"], hazure: ["#eef0e2", "#c3caa0"],
     memory: ["#f0e7fb", "#c8b2ec"], nazori: ["#e2f2ec", "#a4d3c2"], oekaki: ["#fdeaf5", "#efb0d5"],
-    kana: ["#fff2d8", "#eccb88"]
+    kana: ["#fff2d8", "#eccb88"], kata: ["#e6f0e2", "#b0c9a4"], numtrace: ["#e7eef7", "#a9c0da"]
   };
 
   function menuItem(k) { return TASKS[k] || PUZZLES[k] || GAMES[k] || PLAYS[k]; }
@@ -1817,46 +1823,247 @@
     "M 12 84 L 32 84 L 32 64 L 52 64 L 52 44 L 72 44 L 72 24 L 88 24",                                                        // かいだん
     "M 16 20 L 84 20 L 16 80 L 84 80"                                                                                         // Z
   ];
-  // ひらがな：書く順に1画ずつ。vb は表示する範囲（字を大きく見せる）
-  var KANA_VB = "14 12 74 78";
-  var KANA = [
-    { w: "あ", strokes: ["M 22 34 C 40 31, 60 31, 76 33",
-                         "M 55 17 C 52 40, 46 64, 36 82",
-                         "M 72 42 C 46 46, 25 60, 31 75 C 37 89, 66 84, 70 64"] },
-    { w: "い", strokes: ["M 32 28 C 27 46, 30 64, 44 70",
-                         "M 72 28 C 70 44, 69 55, 66 62"] },
-    { w: "う", strokes: ["M 40 27 L 66 27",
-                         "M 29 41 C 47 32, 70 36, 70 52 C 70 68, 52 78, 36 82"] },
-    { w: "え", strokes: ["M 42 25 L 62 25",
-                         "M 32 40 C 48 38, 62 40, 57 48 C 50 58, 36 68, 29 76 C 45 73, 63 76, 76 80"] },
-    { w: "お", strokes: ["M 19 38 L 63 38",
-                         "M 46 21 C 44 41, 39 62, 32 75 C 28 83, 20 81, 23 72",
-                         "M 71 31 C 57 41, 55 58, 66 64 C 77 70, 81 53, 69 47"] }
-  ];
+  // 文字のなぞり：お手本の字を後ろに置き、その上を書く順に1画ずつなぞる。
+  // なぞる線は字の真ん中を通る線。字の形はフォントが描くので、端末が変わっても崩れない
+  var LETTER_VB = "12 10 76 80"; // 表示する範囲（字を大きく見せる）
+  var LETTER_BOX = { x: 18, y: 16, w: 64, h: 68 }; // お手本の字を、この枠にそろえる
+  var LETTERS = {
+    num: [
+      { ch: "1", strokes: ["M 39 31 L 58 19 L 58 78"] },
+      { ch: "2", strokes: ["M 33 34 C 35 22, 64 17, 70 30 C 75 42, 56 55, 33 77 L 70 77"] },
+      { ch: "3", strokes: ["M 34 28 C 42 19, 66 20, 65 33 C 64 44, 52 47, 46 47 C 58 46, 70 51, 68 64 C 66 78, 40 80, 33 70"] },
+      { ch: "4", strokes: ["M 56 20 L 28 60 L 70 60", "M 56 20 L 56 79"] },
+      { ch: "5", strokes: ["M 39 22 L 36 45 C 49 39, 70 44, 70 60 C 70 76, 47 82, 36 72", "M 39 22 L 69 22"] },
+      { ch: "6", strokes: ["M 62 21 C 42 28, 32 45, 32 60 C 32 74, 44 80, 54 77 C 65 73, 68 60, 57 55 C 46 50, 35 56, 33 63"] },
+      { ch: "7", strokes: ["M 31 23 L 69 23 L 45 79"] },
+      { ch: "8", strokes: ["M 50 48 C 38 43, 34 31, 45 24 C 56 17, 66 26, 58 37 C 51 46, 33 53, 32 64 C 31 76, 48 82, 59 76 C 70 70, 65 55, 50 48"] },
+      { ch: "9", strokes: ["M 68 46 C 61 55, 43 57, 38 45 C 33 33, 46 22, 57 26 C 68 30, 70 46, 68 57 C 66 72, 58 80, 45 82"] },
+      { ch: "10", strokes: ["M 22 32 L 34 22 L 34 76",
+                            "M 62 22 C 74 22, 79 35, 79 49 C 79 63, 74 76, 62 76 C 50 76, 45 63, 45 49 C 45 35, 50 22, 62 22"] }
+    ],
+    hira: [
+      { ch: "あ", strokes: ["M 22 34 C 40 31, 60 31, 76 33",
+                            "M 55 17 C 52 40, 46 64, 36 82",
+                            "M 72 42 C 46 46, 25 60, 31 75 C 37 89, 66 84, 70 64"] },
+      { ch: "い", strokes: ["M 32 28 C 27 46, 30 64, 44 70",
+                            "M 72 28 C 70 44, 69 55, 66 62"] },
+      { ch: "う", strokes: ["M 40 27 L 66 27",
+                            "M 29 41 C 47 32, 70 36, 70 52 C 70 68, 52 78, 36 82"] },
+      { ch: "え", strokes: ["M 42 25 L 62 25",
+                            "M 32 40 C 48 38, 62 40, 57 48 C 50 58, 36 68, 29 76 C 45 73, 63 76, 76 80"] },
+      { ch: "お", strokes: ["M 19 38 L 63 38",
+                            "M 46 21 C 44 41, 39 62, 32 75 C 28 83, 20 81, 23 72",
+                            "M 71 31 C 57 41, 55 58, 66 64 C 77 70, 81 53, 69 47"] },
+      { ch: "か", strokes: ["M 24 36 C 34 33, 46 31, 52 33 C 55 45, 46 64, 32 74",
+                            "M 58 20 C 64 40, 66 60, 60 74",
+                            "M 74 40 L 78 56"] },
+      { ch: "き", strokes: ["M 26 30 L 62 26",
+                            "M 22 44 L 60 40",
+                            "M 56 18 C 50 38, 42 56, 32 66",
+                            "M 30 64 C 34 76, 50 80, 60 70"] },
+      { ch: "く", strokes: ["M 60 24 C 44 38, 34 48, 34 52 C 34 56, 44 66, 62 78"] },
+      { ch: "け", strokes: ["M 28 26 C 26 44, 26 62, 24 78",
+                            "M 44 36 L 76 33",
+                            "M 62 22 C 66 42, 66 62, 60 74"] },
+      { ch: "こ", strokes: ["M 28 32 C 42 28, 60 28, 72 32",
+                            "M 26 66 C 40 74, 60 74, 74 66"] },
+      { ch: "さ", strokes: ["M 28 30 L 68 26",
+                            "M 54 18 C 48 36, 38 52, 30 60",
+                            "M 28 60 C 24 72, 36 82, 56 78"] },
+      { ch: "し", strokes: ["M 34 22 C 32 46, 32 66, 42 74 C 52 82, 66 76, 70 64"] },
+      { ch: "す", strokes: ["M 26 32 L 74 30",
+                            "M 56 18 C 54 42, 44 58, 34 64 C 26 69, 30 80, 44 80 C 56 80, 56 68, 46 62"] },
+      { ch: "せ", strokes: ["M 24 38 L 74 34",
+                            "M 40 22 C 38 46, 36 66, 44 76 C 52 84, 66 80, 72 70",
+                            "M 66 24 C 65 36, 64 48, 63 58"] },
+      { ch: "そ", strokes: ["M 30 28 L 68 25 C 58 38, 46 50, 38 58 C 54 56, 68 62, 68 71 C 68 82, 52 86, 40 78"] },
+      { ch: "た", strokes: ["M 22 36 L 54 32",
+                            "M 42 20 C 40 42, 34 62, 24 76",
+                            "M 62 44 L 84 41",
+                            "M 72 34 C 70 54, 68 68, 62 76"] },
+      { ch: "ち", strokes: ["M 26 28 L 68 24",
+                            "M 52 16 C 48 36, 42 54, 40 64 C 38 76, 52 84, 66 78 C 76 74, 76 62, 64 58"] },
+      { ch: "つ", strokes: ["M 28 36 C 44 28, 66 30, 70 44 C 74 60, 56 74, 32 78"] },
+      { ch: "て", strokes: ["M 28 30 L 70 27 C 60 42, 50 58, 48 68 C 46 79, 58 83, 72 75"] },
+      { ch: "と", strokes: ["M 46 22 C 44 36, 42 50, 40 60",
+                            "M 26 56 C 42 62, 62 70, 76 80"] },
+      { ch: "な", strokes: ["M 22 34 L 52 30",
+                            "M 40 20 C 38 42, 32 62, 22 76",
+                            "M 64 24 C 64 38, 64 50, 64 58",
+                            "M 54 52 C 70 48, 82 56, 78 66 C 74 76, 60 76, 56 68"] },
+      { ch: "に", strokes: ["M 28 24 C 26 44, 26 62, 24 78", "M 50 36 L 78 33", "M 48 70 L 80 67"] },
+      { ch: "ぬ", strokes: ["M 26 32 C 34 48, 40 64, 44 78",
+                            "M 58 22 C 38 32, 24 52, 30 68 C 36 82, 58 82, 66 68 C 72 56, 64 48, 54 52 C 44 56, 46 70, 60 74 C 74 78, 82 66, 76 56"] },
+      { ch: "ね", strokes: ["M 26 26 C 26 46, 26 64, 24 80",
+                            "M 42 30 C 54 26, 66 30, 66 40 C 66 52, 50 60, 42 68 C 34 76, 44 86, 58 82 C 72 78, 78 62, 66 54 C 56 48, 44 56, 48 68"] },
+      { ch: "の", strokes: ["M 60 36 C 54 26, 42 22, 34 30 C 24 40, 24 62, 36 72 C 48 82, 64 74, 68 58 C 71 46, 68 34, 62 28"] },
+      { ch: "は", strokes: ["M 26 24 C 24 44, 24 64, 22 80", "M 36 44 L 60 42",
+                            "M 54 26 C 54 44, 52 58, 56 68 C 60 78, 72 80, 80 70"] },
+      { ch: "ひ", strokes: ["M 26 38 C 34 30, 42 36, 42 48 C 42 60, 36 72, 44 78 C 56 86, 74 76, 78 60"] },
+      { ch: "ふ", strokes: ["M 50 20 C 48 26, 46 30, 44 34",
+                            "M 40 42 C 30 50, 26 64, 32 72 C 40 82, 54 76, 54 64",
+                            "M 26 58 L 22 70", "M 66 58 L 72 70"] },
+      { ch: "へ", strokes: ["M 24 58 C 36 46, 46 38, 52 38 C 58 38, 68 50, 80 64"] },
+      { ch: "ほ", strokes: ["M 26 22 C 24 44, 24 64, 22 80", "M 44 32 L 78 30", "M 44 54 L 76 52",
+                            "M 62 22 C 62 44, 60 62, 64 72 C 68 80, 78 80, 84 72"] },
+      { ch: "ま", strokes: ["M 24 30 L 72 28", "M 24 54 L 74 52",
+                            "M 56 16 C 54 40, 50 62, 50 70 C 50 80, 62 84, 72 76"] },
+      { ch: "み", strokes: ["M 26 34 C 44 28, 62 32, 60 44 C 58 54, 40 60, 28 62 C 42 64, 54 70, 56 80",
+                            "M 52 18 C 54 38, 58 56, 66 70"] },
+      { ch: "む", strokes: ["M 22 36 L 66 32",
+                            "M 46 18 C 46 40, 42 58, 36 70 C 32 80, 44 84, 52 76 C 60 68, 54 58, 44 60",
+                            "M 76 44 L 80 58"] },
+      { ch: "め", strokes: ["M 30 32 C 44 42, 56 58, 62 78",
+                            "M 70 26 C 50 26, 32 44, 30 62 C 28 78, 44 84, 56 74 C 70 62, 68 40, 56 30"] },
+      { ch: "も", strokes: ["M 42 18 C 40 40, 38 60, 42 70 C 46 80, 60 82, 70 72",
+                            "M 22 36 L 68 32", "M 22 56 L 66 52"] },
+      { ch: "や", strokes: ["M 24 40 C 40 34, 60 32, 72 36", "M 46 22 C 48 44, 48 64, 44 80",
+                            "M 60 54 C 66 60, 72 66, 78 72"] },
+      { ch: "ゆ", strokes: ["M 36 26 C 46 38, 50 52, 48 62 C 46 74, 32 78, 28 68 C 24 56, 40 44, 58 42 C 72 40, 78 48, 74 58",
+                            "M 64 20 C 62 40, 60 60, 58 78"] },
+      { ch: "よ", strokes: ["M 48 18 C 46 38, 44 58, 44 68",
+                            "M 26 42 L 66 40 C 60 56, 44 66, 34 70 C 48 68, 64 72, 62 80 C 60 86, 46 86, 40 78"] },
+      { ch: "ら", strokes: ["M 34 20 C 42 24, 52 26, 60 26",
+                            "M 30 42 C 46 36, 66 40, 68 54 C 70 70, 52 80, 32 80"] },
+      { ch: "り", strokes: ["M 36 24 C 34 42, 32 58, 30 70",
+                            "M 66 22 C 66 44, 64 62, 56 74 C 48 84, 36 84, 30 78"] },
+      { ch: "る", strokes: ["M 28 28 L 68 26 C 58 40, 46 52, 38 60 C 54 56, 70 60, 70 70 C 70 82, 52 84, 46 74 C 42 66, 50 60, 58 64"] },
+      { ch: "れ", strokes: ["M 26 26 C 26 46, 26 64, 24 80",
+                            "M 46 28 C 54 28, 62 30, 64 38 C 66 50, 52 62, 44 70 C 40 76, 46 84, 58 82 C 70 80, 78 70, 76 58"] },
+      { ch: "ろ", strokes: ["M 28 28 L 68 26 C 58 40, 46 52, 38 60 C 56 56, 72 62, 72 72 C 72 84, 54 86, 44 78"] },
+      { ch: "わ", strokes: ["M 26 26 C 26 46, 26 64, 24 80",
+                            "M 46 28 C 56 28, 64 32, 66 40 C 68 52, 56 64, 48 72 C 60 76, 74 70, 78 58"] },
+      { ch: "を", strokes: ["M 24 30 L 68 28",
+                            "M 46 18 C 44 34, 40 46, 32 54 C 44 56, 54 62, 54 70",
+                            "M 24 64 C 34 74, 50 82, 72 80"] },
+      { ch: "ん", strokes: ["M 26 34 C 30 26, 38 22, 42 28 C 46 36, 40 50, 32 62 C 26 72, 34 82, 48 80 C 62 78, 72 66, 76 54"] }
+    ],
+    kata: [
+      { ch: "ア", strokes: ["M 24 30 L 74 28", "M 58 28 C 54 48, 44 66, 26 78"] },
+      { ch: "イ", strokes: ["M 70 22 C 56 34, 42 44, 26 52", "M 46 38 C 48 56, 48 70, 48 80"] },
+      { ch: "ウ", strokes: ["M 50 16 L 50 26", "M 26 34 C 26 46, 26 54, 26 60",
+                            "M 26 34 L 74 32 C 74 54, 72 70, 60 80"] },
+      { ch: "エ", strokes: ["M 26 26 L 74 24", "M 50 26 L 50 72", "M 22 76 L 78 74"] },
+      { ch: "オ", strokes: ["M 22 34 L 76 32", "M 60 44 C 50 54, 40 62, 28 68",
+                            "M 58 18 C 56 42, 52 64, 44 78 C 40 84, 32 82, 32 74"] },
+      { ch: "カ", strokes: ["M 22 32 L 62 30 C 64 50, 56 70, 40 80", "M 44 22 C 40 42, 34 62, 26 78"] },
+      { ch: "キ", strokes: ["M 30 30 L 74 26", "M 24 50 L 70 46", "M 52 18 C 50 42, 48 64, 46 82"] },
+      { ch: "ク", strokes: ["M 30 26 L 66 24 C 66 44, 62 64, 52 78", "M 44 38 C 36 48, 28 56, 20 62"] },
+      { ch: "ケ", strokes: ["M 32 22 C 30 32, 26 40, 20 48", "M 26 38 L 70 36",
+                            "M 58 36 C 58 54, 54 70, 44 80"] },
+      { ch: "コ", strokes: ["M 26 28 L 72 26 C 72 46, 72 62, 70 74", "M 26 74 L 70 74"] },
+      { ch: "サ", strokes: ["M 34 24 C 34 42, 32 58, 30 72", "M 60 22 C 60 40, 58 54, 56 66", "M 22 40 L 78 36"] },
+      { ch: "シ", strokes: ["M 26 30 L 36 36", "M 26 50 L 36 56", "M 70 24 C 70 48, 62 68, 34 78"] },
+      { ch: "ス", strokes: ["M 26 28 L 72 26 C 60 44, 48 58, 34 70", "M 44 52 C 54 62, 64 72, 74 80"] },
+      { ch: "セ", strokes: ["M 26 36 L 72 32", "M 40 20 C 38 44, 36 64, 44 74 C 52 84, 68 80, 74 68"] },
+      { ch: "ソ", strokes: ["M 30 28 L 40 36", "M 68 24 C 66 46, 58 66, 38 80"] },
+      { ch: "タ", strokes: ["M 30 26 L 66 24 C 66 46, 62 66, 52 80", "M 44 38 C 36 48, 28 56, 20 62",
+                            "M 44 48 C 52 58, 58 66, 64 74"] },
+      { ch: "チ", strokes: ["M 30 24 C 28 32, 24 40, 18 46", "M 26 42 L 74 38", "M 52 40 C 52 58, 50 72, 46 82"] },
+      { ch: "ツ", strokes: ["M 26 26 L 34 34", "M 48 26 L 56 34", "M 74 24 C 74 48, 66 68, 36 78"] },
+      { ch: "テ", strokes: ["M 28 24 L 72 22", "M 22 44 L 78 42", "M 52 44 C 52 62, 50 74, 46 84"] },
+      { ch: "ト", strokes: ["M 38 20 C 38 44, 38 62, 38 80", "M 38 46 C 50 52, 62 60, 72 70"] },
+      { ch: "ナ", strokes: ["M 22 36 L 76 34", "M 54 20 C 52 44, 48 64, 40 80"] },
+      { ch: "ニ", strokes: ["M 30 32 L 70 30", "M 22 70 L 78 68"] },
+      { ch: "ヌ", strokes: ["M 26 28 L 72 26 C 60 44, 48 58, 34 70", "M 50 46 C 56 58, 62 70, 68 80"] },
+      { ch: "ネ", strokes: ["M 50 16 L 50 26", "M 24 36 L 76 34", "M 52 34 C 50 50, 44 62, 32 72",
+                            "M 44 52 C 54 62, 62 70, 70 78"] },
+      { ch: "ノ", strokes: ["M 70 22 C 58 40, 44 58, 26 76"] },
+      { ch: "ハ", strokes: ["M 40 26 C 36 44, 30 62, 22 78", "M 60 26 C 64 44, 70 62, 78 78"] },
+      { ch: "ヒ", strokes: ["M 30 42 L 68 36", "M 36 22 C 34 44, 32 62, 32 74 C 48 74, 64 72, 76 68"] },
+      { ch: "フ", strokes: ["M 26 28 L 72 26 C 70 48, 62 68, 44 80"] },
+      { ch: "ヘ", strokes: ["M 24 58 C 36 46, 46 38, 52 38 C 58 38, 68 50, 80 64"] },
+      { ch: "ホ", strokes: ["M 22 36 L 78 34", "M 50 20 C 50 44, 50 64, 50 82",
+                            "M 38 48 C 32 58, 26 66, 18 72", "M 62 48 C 68 58, 74 66, 82 72"] },
+      { ch: "マ", strokes: ["M 26 28 L 72 26 C 62 42, 50 54, 36 64", "M 42 54 C 48 64, 52 74, 56 84"] },
+      { ch: "ミ", strokes: ["M 30 26 L 68 32", "M 30 48 L 68 54", "M 30 70 L 70 78"] },
+      { ch: "ム", strokes: ["M 52 22 C 46 36, 36 52, 24 64", "M 30 56 C 44 66, 60 74, 78 78"] },
+      { ch: "メ", strokes: ["M 28 30 C 42 46, 56 62, 70 78", "M 72 26 C 58 44, 44 62, 26 80"] },
+      { ch: "モ", strokes: ["M 26 32 L 70 30", "M 22 54 L 74 50",
+                            "M 52 18 C 50 42, 48 62, 48 72 C 48 82, 60 84, 70 76"] },
+      { ch: "ヤ", strokes: ["M 24 40 C 42 36, 62 34, 76 38", "M 54 20 C 52 42, 50 62, 46 80"] },
+      { ch: "ユ", strokes: ["M 30 28 L 72 26 C 72 44, 72 58, 70 70", "M 22 74 L 78 72"] },
+      { ch: "ヨ", strokes: ["M 28 26 L 70 24 C 70 42, 70 58, 68 74", "M 34 48 L 68 46", "M 28 74 L 68 72"] },
+      { ch: "ラ", strokes: ["M 34 24 L 68 22", "M 26 44 L 74 42 C 72 62, 62 76, 44 84"] },
+      { ch: "リ", strokes: ["M 34 26 C 34 44, 32 58, 30 70", "M 68 22 C 68 44, 66 62, 58 74 C 50 84, 38 84, 32 78"] },
+      { ch: "ル", strokes: ["M 32 28 C 30 46, 30 62, 28 74", "M 56 24 C 54 46, 54 64, 58 72 C 62 80, 74 80, 80 70"] },
+      { ch: "レ", strokes: ["M 34 22 C 34 46, 34 66, 44 74 C 56 82, 72 74, 78 60"] },
+      { ch: "ロ", strokes: ["M 28 26 C 26 44, 26 62, 26 76", "M 28 26 L 72 24 C 72 44, 72 62, 70 76", "M 28 76 L 70 76"] },
+      { ch: "ワ", strokes: ["M 26 28 C 26 46, 26 60, 26 70", "M 26 28 L 72 26 C 72 48, 70 66, 60 78"] },
+      { ch: "ヲ", strokes: ["M 28 26 L 70 24", "M 34 48 L 70 46", "M 70 24 C 70 50, 64 70, 46 80"] },
+      { ch: "ン", strokes: ["M 26 30 L 38 38", "M 26 66 C 44 62, 64 52, 76 32"] }
+    ]
+  };
   var TRACE_ROUNDS = 3;
   var tr = null;
 
   function startTrace(kind) {
     go("trace");
     tr = { kind: kind, i: 0 };
-    tr.items = kind === "kana"
-      ? shuffle(KANA).slice(0, TRACE_ROUNDS)
-      : [pick(TRACE_EASY), pick(TRACE_MID), pick(TRACE_HARD)].map(function (d) { return { strokes: [d] }; });
+    if (kind === "shape") {
+      // やさしい→ふつう→むずかしい の順に3つ
+      tr.items = [pick(TRACE_EASY), pick(TRACE_MID), pick(TRACE_HARD)].map(function (d) { return { strokes: [d] }; });
+    } else {
+      // 文字：五十音の並びで となり合う3文字（「あ・い・う」のように まとめて練習できる）
+      var list = LETTERS[kind];
+      var s = Math.floor(Math.random() * list.length);
+      tr.items = [0, 1, 2].map(function (k) { return list[(s + k) % list.length]; });
+    }
     nextTrace();
+  }
+
+  // お手本の字を、決まった枠（LETTER_BOX）にそろえて置く。
+  // フォントによって字の大きさが違うので、実際に測ってから合わせる
+  function addGlyph(svg, ch) {
+    try {
+      var box = LETTER_BOX;
+      var ctx = document.createElement("canvas").getContext("2d");
+      ctx.font = '800 100px ' + getComputedStyle(document.body).fontFamily;
+      var m = ctx.measureText(ch);
+      var w = m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
+      var h = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+      if (!w || !h) return;
+      var s = Math.min(box.w / w, box.h / h);
+      var t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("class", "tr-glyph");
+      t.setAttribute("x", (box.x + (box.w - w * s) / 2 + m.actualBoundingBoxLeft * s).toFixed(1));
+      t.setAttribute("y", (box.y + (box.h - h * s) / 2 + m.actualBoundingBoxAscent * s).toFixed(1));
+      t.setAttribute("font-size", (100 * s).toFixed(1));
+      t.textContent = ch;
+      svg.insertBefore(t, svg.firstChild); // 線より後ろに置く
+      return { x: box.x + (box.w - w * s) / 2, y: box.y + (box.h - h * s) / 2, w: w * s, h: h * s };
+    } catch (e) { return null; }
+  }
+
+  // なぞる線を、お手本の字にぴったり重ねる（字の中心と大きさに合わせる）
+  function fitStrokes(svg, ink) {
+    var g = svg.querySelector(".tr-fit");
+    if (!g || !ink) return;
+    g.removeAttribute("transform");
+    var b = g.getBBox();
+    if (!b.width || !b.height) return;
+    var pad = 5.5; // なぞる線は字の中心を通るので、字の外側より内側になる
+    var s = Math.min((ink.w - pad * 2) / b.width, (ink.h - pad * 2) / b.height);
+    s = Math.max(0.8, Math.min(1.25, s)); // 変えすぎない
+    var tx = ink.x + ink.w / 2 - (b.x + b.width / 2) * s;
+    var ty = ink.y + ink.h / 2 - (b.y + b.height / 2) * s;
+    g.setAttribute("transform", "translate(" + tx.toFixed(2) + "," + ty.toFixed(2) + ") scale(" + s.toFixed(3) + ")");
   }
 
   function nextTrace() {
     if (tr.i >= TRACE_ROUNDS) { finish(TRACE_ROUNDS); return; }
     drawDots("tr-dots", TRACE_ROUNDS, tr.i);
     var item = tr.items[tr.i];
-    document.getElementById("tr-prompt").textContent = item.w ? item.w + " なぞって" : "ゆびで なぞって";
+    document.getElementById("tr-prompt").textContent = item.ch ? item.ch + " なぞって" : "ゆびで なぞって";
     var area = document.getElementById("trace-area");
     area.innerHTML =
-      '<svg class="trace-svg" viewBox="' + (item.w ? KANA_VB : "0 0 100 100") + '" preserveAspectRatio="xMidYMid meet">' +
+      '<svg class="trace-svg' + (item.ch ? " on-letter" : "") + '" viewBox="' + (item.ch ? LETTER_VB : "0 0 100 100") + '" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="tr-fit">' +
       item.strokes.map(function (d) { return '<path class="tr-track" d="' + d + '"/>'; }).join("") +
       item.strokes.map(function (d) { return '<path class="tr-done" d="' + d + '"/>'; }).join("") +
-      '<circle class="tr-goal" r="4.5"/><circle class="tr-cursor" r="6"/></svg>';
+      '</g><circle class="tr-goal" r="4.5"/><circle class="tr-cursor" r="6"/></svg>';
     tr.svg = area.querySelector("svg");
+    if (item.ch) fitStrokes(tr.svg, addGlyph(tr.svg, item.ch));
     // まだ なぞっていない画は、緑の線を隠しておく
     Array.prototype.forEach.call(tr.svg.querySelectorAll(".tr-done"), function (p) {
       var l = p.getTotalLength();
@@ -1875,28 +2082,36 @@
   function setupStroke() {
     var tracks = tr.svg.querySelectorAll(".tr-track");
     Array.prototype.forEach.call(tracks, function (t, i) {
-      t.classList.toggle("later", i > tr.s); // まだ なぞらない線は うすく
+      t.classList.toggle("now", i === tr.s);  // いま なぞる線
+      t.classList.toggle("later", i > tr.s);  // まだ なぞらない線は うすく
     });
     var track = tracks[tr.s];
     var len = track.getTotalLength();
     var n = Math.max(6, Math.min(18, Math.round(len / 14)));
-    var pts = [];
-    for (var i = 0; i <= n; i++) pts.push(track.getPointAtLength(len * i / n));
+    var ctm = track.getCTM(); // 線の座標 →（まとめてずらした分をふくむ）画面の座標
+    var pts = [], root = [];
+    for (var i = 0; i <= n; i++) {
+      var p = track.getPointAtLength(len * i / n);
+      pts.push(p);
+      root.push(ctm ? p.matrixTransform(ctm) : p);
+    }
     tr.doneEl = tr.svg.querySelectorAll(".tr-done")[tr.s];
     tr.doneEl.style.strokeDasharray = len;
     tr.doneEl.style.strokeDashoffset = len;
+    tr.track = track;
     tr.pts = pts;
+    tr.root = root;
     tr.len = len;
     tr.n = n;
     tr.at = 0;
     var goal = tr.svg.querySelector(".tr-goal");
-    goal.setAttribute("cx", pts[n].x);
-    goal.setAttribute("cy", pts[n].y);
+    goal.setAttribute("cx", root[n].x);
+    goal.setAttribute("cy", root[n].y);
     moveCursor();
   }
 
   function moveCursor() {
-    var p = tr.pts[Math.min(tr.at + 1, tr.n)];
+    var p = tr.root[Math.min(tr.at + 1, tr.n)];
     tr.cursor.setAttribute("cx", p.x);
     tr.cursor.setAttribute("cy", p.y);
   }
@@ -1906,12 +2121,12 @@
     if (!tr || tr.locked) return;
     if (e.type === "pointermove" && e.pointerType === "mouse" && !e.buttons) return;
     e.preventDefault();
-    var m = tr.svg.getScreenCTM();
+    var m = (tr.track || tr.svg).getScreenCTM();
     if (!m) return;
     var pt = tr.svg.createSVGPoint();
     pt.x = e.clientX;
     pt.y = e.clientY;
-    var p = pt.matrixTransform(m.inverse());
+    var p = pt.matrixTransform(m.inverse()); // 線と同じ座標系に直す
     var next = tr.pts[tr.at + 1];
     if (!next) return;
     var dx = p.x - next.x, dy = p.y - next.y;
@@ -2190,7 +2405,9 @@
             "・1セッション5問。上の星で「あと何問か」が見える＝終わりが目で見える<br>" +
             "・「あそぶ子に合わせる」で 2〜3さい にすると、選ぶものが2つになり、パズル・きおくのピースも少なくなる<br>" +
             "・なぞり／あいうえお／おえかきは記録なし。ゆびが少しずれても進むので、小さい子でも最後まで行ける<br>" +
-            "・なぞりは「よこ線→なみ→うずまき」のように、やさしい順で3つ。あいうえおは書く順に1画ずつ<br>" +
+            "・なぞりは「よこ線→なみ→うずまき」のように、やさしい順で3つ<br>" +
+            "・あいうえお／カタカナ／すうじ なぞり は、お手本の字の上を書く順に1画ずつ。" +
+            "五十音の並びでとなり合う3文字が出る（あ・い・う → か・き・く…）<br>" +
             "・パズルは1回3つで、ピースが2→3→4と増える。ちがう場所に置くと戻るだけで、1回まちがえるとそのピースと正しい場所に枠が出る。" +
             "指で動かすほか、ピースをタップ→置く場所をタップ でも置ける<br>" +
             "・同じ答えは続けて出さない（2通りしかない課題は3回続けない）。正解の場所も3回続けて同じにしない<br>" +
