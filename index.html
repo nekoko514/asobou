@@ -303,7 +303,9 @@
   .trace-svg { width: 100%; height: 100%; touch-action: none; }
   .tr-track, .tr-done { fill: none; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
   .tr-track { stroke: #e8ddca; }
+  .tr-track.later { opacity: .4; } /* ひらがなで、まだ なぞらない画は うすく */
   .tr-done { stroke: var(--accent); }
+  .kana-ico { font-weight: 800; }
   .tr-goal { fill: var(--warm); }
   .tr-cursor {
     fill: #fff; stroke: var(--warm); stroke-width: 2.5;
@@ -620,7 +622,7 @@
       <div class="dots" id="tr-dots"></div>
     </div>
     <div class="scroll task-body" id="tr-body">
-      <div class="prompt">ゆびで なぞって</div>
+      <div class="prompt" id="tr-prompt">ゆびで なぞって</div>
       <div class="trace-area" id="trace-area"></div>
     </div>
   </section>
@@ -1140,14 +1142,15 @@
   var PLAYS = {
     bubble: { ico: "🫧", label: "しゃぼんだま", start: function () { startPop("bubble"); } },
     balloon: { ico: "🎈", label: "ふうせん", start: function () { startPop("balloon"); } },
-    nazori: { ico: "✏️", label: "なぞり", start: startTrace },
+    nazori: { ico: "✏️", label: "なぞり", start: function () { startTrace("shape"); } },
+    kana: { ico: '<span class="kana-ico">あ</span>', label: "あいうえお", age: 4, start: function () { startTrace("kana"); } },
     oekaki: { ico: "🖍️", label: "おえかき", start: startDraw }
   };
   // 並び順。今までのあそびの位置は変えず、新しいものは後ろに足す
   var MENU_ORDER = [
     "size", "count", "sort", "onoma", "iro", "katachi", "onaji", "kage", "kimochi", "kotoba", "ooi",
     "hame", "eawase", "bubble", "balloon",
-    "pattern", "suuji", "hazure", "memory", "nazori", "oekaki"
+    "pattern", "suuji", "hazure", "memory", "nazori", "kana", "oekaki"
   ];
   // 保護者メニューの記録に出すもの（自由あそびは記録をとらない）
   function recordedKeys() {
@@ -1163,7 +1166,8 @@
     kotoba: ["#dcf3ef", "#9dd6ca"], ooi: ["#f4ecdd", "#d7c29d"], hame: ["#f6e8d4", "#dbbd93"],
     eawase: ["#e3eeff", "#a7c3f1"], bubble: ["#dff5f7", "#a0dbe2"], balloon: ["#ffe3ea", "#f2a8bb"],
     pattern: ["#e7ecfb", "#b1c0ef"], suuji: ["#fdeede", "#eec79a"], hazure: ["#eef0e2", "#c3caa0"],
-    memory: ["#f0e7fb", "#c8b2ec"], nazori: ["#e2f2ec", "#a4d3c2"], oekaki: ["#fdeaf5", "#efb0d5"]
+    memory: ["#f0e7fb", "#c8b2ec"], nazori: ["#e2f2ec", "#a4d3c2"], oekaki: ["#fdeaf5", "#efb0d5"],
+    kana: ["#fff2d8", "#eccb88"]
   };
 
   function menuItem(k) { return TASKS[k] || PUZZLES[k] || GAMES[k] || PLAYS[k]; }
@@ -1791,54 +1795,104 @@
   }
 
   /* --- なぞり（線をゆびでたどる。記録なし） --- */
-  var TRACE_PATHS = [
+  // やさしい順に3つ出す。1本の線でも、ひらがなのように何本かに分かれていてもよい
+  var TRACE_EASY = [
     "M 8 50 L 92 50",                                  // よこ線
+    "M 50 8 L 50 92",                                  // たて線
+    "M 14 84 L 86 16",                                 // ななめ
+    "M 12 78 A 38 38 0 0 1 88 78",                     // にじ
+    "M 14 82 L 50 20 L 86 82"                          // やま
+  ];
+  var TRACE_MID = [
     "M 12 78 C 34 22, 56 88, 90 30",                   // なみ
     "M 12 82 L 34 22 L 56 82 L 78 22",                 // ぎざぎざ
+    "M 22 12 L 22 58 C 22 84, 78 84, 78 58 L 78 12",   // U
     "M 50 12 A 38 38 0 1 1 49.6 12",                   // まる
-    "M 16 20 L 84 20 L 16 80 L 84 80",                 // ジグザグ（よこ）
-    "M 20 85 C 20 30, 80 30, 80 85"                    // やま
+    "M 50 14 L 86 82 L 14 82 Z",                       // さんかく
+    "M 20 22 L 80 22 L 80 82 L 20 82 Z"                // しかく
+  ];
+  var TRACE_HARD = [
+    "M 50 52 C 56 46, 64 52, 60 60 C 55 70, 40 68, 38 55 C 35 38, 55 28, 70 38 C 86 49, 82 76, 60 82 C 34 89, 16 66, 22 44", // うずまき
+    "M 10 76 C 20 36, 42 36, 34 66 C 29 86, 52 84, 56 54 C 59 34, 80 36, 72 66 C 67 86, 84 80, 92 56",                       // ループ
+    "M 12 84 L 32 84 L 32 64 L 52 64 L 52 44 L 72 44 L 72 24 L 88 24",                                                        // かいだん
+    "M 16 20 L 84 20 L 16 80 L 84 80"                                                                                         // Z
+  ];
+  // ひらがな：書く順に1画ずつ。vb は表示する範囲（字を大きく見せる）
+  var KANA_VB = "14 12 74 78";
+  var KANA = [
+    { w: "あ", strokes: ["M 22 34 C 40 31, 60 31, 76 33",
+                         "M 55 17 C 52 40, 46 64, 36 82",
+                         "M 72 42 C 46 46, 25 60, 31 75 C 37 89, 66 84, 70 64"] },
+    { w: "い", strokes: ["M 32 28 C 27 46, 30 64, 44 70",
+                         "M 72 28 C 70 44, 69 55, 66 62"] },
+    { w: "う", strokes: ["M 40 27 L 66 27",
+                         "M 29 41 C 47 32, 70 36, 70 52 C 70 68, 52 78, 36 82"] },
+    { w: "え", strokes: ["M 42 25 L 62 25",
+                         "M 32 40 C 48 38, 62 40, 57 48 C 50 58, 36 68, 29 76 C 45 73, 63 76, 76 80"] },
+    { w: "お", strokes: ["M 19 38 L 63 38",
+                         "M 46 21 C 44 41, 39 62, 32 75 C 28 83, 20 81, 23 72",
+                         "M 71 31 C 57 41, 55 58, 66 64 C 77 70, 81 53, 69 47"] }
   ];
   var TRACE_ROUNDS = 3;
   var tr = null;
 
-  function startTrace() {
+  function startTrace(kind) {
     go("trace");
-    tr = { i: 0, order: shuffle(TRACE_PATHS) };
+    tr = { kind: kind, i: 0 };
+    tr.items = kind === "kana"
+      ? shuffle(KANA).slice(0, TRACE_ROUNDS)
+      : [pick(TRACE_EASY), pick(TRACE_MID), pick(TRACE_HARD)].map(function (d) { return { strokes: [d] }; });
     nextTrace();
   }
 
   function nextTrace() {
     if (tr.i >= TRACE_ROUNDS) { finish(TRACE_ROUNDS); return; }
     drawDots("tr-dots", TRACE_ROUNDS, tr.i);
-    var d = tr.order[tr.i];
+    var item = tr.items[tr.i];
+    document.getElementById("tr-prompt").textContent = item.w ? item.w + " なぞって" : "ゆびで なぞって";
     var area = document.getElementById("trace-area");
     area.innerHTML =
-      '<svg class="trace-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">' +
-      '<path class="tr-track" d="' + d + '"/><path class="tr-done" d="' + d + '"/>' +
+      '<svg class="trace-svg" viewBox="' + (item.w ? KANA_VB : "0 0 100 100") + '" preserveAspectRatio="xMidYMid meet">' +
+      item.strokes.map(function (d) { return '<path class="tr-track" d="' + d + '"/>'; }).join("") +
+      item.strokes.map(function (d) { return '<path class="tr-done" d="' + d + '"/>'; }).join("") +
       '<circle class="tr-goal" r="4.5"/><circle class="tr-cursor" r="6"/></svg>';
-    var svg = area.querySelector("svg");
-    var track = svg.querySelector(".tr-track");
+    tr.svg = area.querySelector("svg");
+    // まだ なぞっていない画は、緑の線を隠しておく
+    Array.prototype.forEach.call(tr.svg.querySelectorAll(".tr-done"), function (p) {
+      var l = p.getTotalLength();
+      p.style.strokeDasharray = l;
+      p.style.strokeDashoffset = l;
+    });
+    tr.cursor = tr.svg.querySelector(".tr-cursor");
+    tr.s = 0;        // いま なぞっている線（ひらがなは何本かある）
+    tr.locked = false;
+    setupStroke();
+    tr.svg.addEventListener("pointerdown", traceMove);
+    tr.svg.addEventListener("pointermove", traceMove);
+  }
+
+  // いまなぞる線に、通過する点をならべる（そこを通ると線がのびる）
+  function setupStroke() {
+    var tracks = tr.svg.querySelectorAll(".tr-track");
+    Array.prototype.forEach.call(tracks, function (t, i) {
+      t.classList.toggle("later", i > tr.s); // まだ なぞらない線は うすく
+    });
+    var track = tracks[tr.s];
     var len = track.getTotalLength();
-    var n = 16;
+    var n = Math.max(6, Math.min(18, Math.round(len / 14)));
     var pts = [];
     for (var i = 0; i <= n; i++) pts.push(track.getPointAtLength(len * i / n));
-    tr.svg = svg;
-    tr.done = svg.querySelector(".tr-done");
-    tr.cursor = svg.querySelector(".tr-cursor");
+    tr.doneEl = tr.svg.querySelectorAll(".tr-done")[tr.s];
+    tr.doneEl.style.strokeDasharray = len;
+    tr.doneEl.style.strokeDashoffset = len;
     tr.pts = pts;
     tr.len = len;
     tr.n = n;
     tr.at = 0;
-    tr.locked = false;
-    tr.done.style.strokeDasharray = len;
-    tr.done.style.strokeDashoffset = len;
-    var goal = svg.querySelector(".tr-goal");
+    var goal = tr.svg.querySelector(".tr-goal");
     goal.setAttribute("cx", pts[n].x);
     goal.setAttribute("cy", pts[n].y);
     moveCursor();
-    svg.addEventListener("pointerdown", traceMove);
-    svg.addEventListener("pointermove", traceMove);
   }
 
   function moveCursor() {
@@ -1863,15 +1917,21 @@
     var dx = p.x - next.x, dy = p.y - next.y;
     if (Math.sqrt(dx * dx + dy * dy) > 11) return;
     tr.at++;
-    tr.done.style.strokeDashoffset = tr.len * (1 - tr.at / tr.n);
+    tr.doneEl.style.strokeDashoffset = tr.len * (1 - tr.at / tr.n);
     note(tr.at - 1); // 進むほど音が高くなる
     moveCursor();
-    if (tr.at >= tr.n) {
-      tr.locked = true;
-      burst(tr.cursor, 12);
-      play("right");
-      later(function () { tr.i++; nextTrace(); }, 1100);
+    if (tr.at < tr.n) return;
+    if (tr.s + 1 < tr.items[tr.i].strokes.length) {
+      // 次の画へ（ひらがな）
+      tr.s++;
+      play("place");
+      setupStroke();
+      return;
     }
+    tr.locked = true;
+    burst(tr.cursor, 12);
+    play("right");
+    later(function () { tr.i++; nextTrace(); }, 1100);
   }
 
   /* --- おえかき（自由あそび・記録なし） --- */
@@ -2129,7 +2189,8 @@
             "・間違えても×は出ず、選択肢が薄くなるだけ。1回外すと正解の枠がそっと出る<br>" +
             "・1セッション5問。上の星で「あと何問か」が見える＝終わりが目で見える<br>" +
             "・「あそぶ子に合わせる」で 2〜3さい にすると、選ぶものが2つになり、パズル・きおくのピースも少なくなる<br>" +
-            "・なぞり／おえかきは記録なし。なぞりは、ゆびが少しずれても進むので、小さい子でも最後まで行ける<br>" +
+            "・なぞり／あいうえお／おえかきは記録なし。ゆびが少しずれても進むので、小さい子でも最後まで行ける<br>" +
+            "・なぞりは「よこ線→なみ→うずまき」のように、やさしい順で3つ。あいうえおは書く順に1画ずつ<br>" +
             "・パズルは1回3つで、ピースが2→3→4と増える。ちがう場所に置くと戻るだけで、1回まちがえるとそのピースと正しい場所に枠が出る。" +
             "指で動かすほか、ピースをタップ→置く場所をタップ でも置ける<br>" +
             "・同じ答えは続けて出さない（2通りしかない課題は3回続けない）。正解の場所も3回続けて同じにしない<br>" +
