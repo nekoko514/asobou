@@ -303,11 +303,8 @@
   .trace-svg { width: 100%; height: 100%; touch-action: none; }
   .tr-track, .tr-done { fill: none; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
   .tr-track { stroke: #e8ddca; }
-  .tr-track.later { opacity: .4; } /* まだ なぞらない画は うすく */
-  /* 文字のときは、お手本の字を後ろに置き、いまなぞる画だけを少し濃く見せる */
-  .tr-glyph { fill: #eadfcb; font-weight: 800; }
-  .on-letter .tr-track { stroke: transparent; }
-  .on-letter .tr-track.now { stroke: #d8c6a4; }
+  .tr-track.now { stroke: #dccdb0; }  /* いま なぞる画は少し濃く */
+  .tr-track.later { opacity: .45; }   /* まだ なぞらない画は うすく */
   .tr-done { stroke: var(--accent); }
   .kana-ico { font-weight: 800; }
   .tr-goal { fill: var(--warm); }
@@ -1823,10 +1820,9 @@
     "M 12 84 L 32 84 L 32 64 L 52 64 L 52 44 L 72 44 L 72 24 L 88 24",                                                        // かいだん
     "M 16 20 L 84 20 L 16 80 L 84 80"                                                                                         // Z
   ];
-  // 文字のなぞり：お手本の字を後ろに置き、その上を書く順に1画ずつなぞる。
-  // なぞる線は字の真ん中を通る線。字の形はフォントが描くので、端末が変わっても崩れない
+  // 文字のなぞり：字を書く順に1画ずつなぞる。なぞる線そのものが字の形になる
+  // （フォントの字を後ろに重ねると、線と字が二重に見えてしまうので使わない）
   var LETTER_VB = "12 10 76 80"; // 表示する範囲（字を大きく見せる）
-  var LETTER_BOX = { x: 18, y: 16, w: 64, h: 68 }; // お手本の字を、この枠にそろえる
   var LETTERS = {
     num: [
       { ch: "1", strokes: ["M 39 31 L 58 19 L 58 78"] },
@@ -1885,31 +1881,32 @@
                             "M 52 16 C 48 36, 42 54, 40 64 C 38 76, 52 84, 66 78 C 76 74, 76 62, 64 58"] },
       { ch: "つ", strokes: ["M 28 36 C 44 28, 66 30, 70 44 C 74 60, 56 74, 32 78"] },
       { ch: "て", strokes: ["M 28 30 L 70 27 C 60 42, 50 58, 48 68 C 46 79, 58 83, 72 75"] },
-      { ch: "と", strokes: ["M 46 22 C 44 36, 42 50, 40 60",
-                            "M 26 56 C 42 62, 62 70, 76 80"] },
-      { ch: "な", strokes: ["M 22 34 L 52 30",
-                            "M 40 20 C 38 42, 32 62, 22 76",
-                            "M 64 24 C 64 38, 64 50, 64 58",
-                            "M 54 52 C 70 48, 82 56, 78 66 C 74 76, 60 76, 56 68"] },
+      { ch: "と", strokes: ["M 36 20 C 37 30, 38 40, 40 50",
+                            "M 74 34 C 58 40, 38 50, 31 62 C 26 72, 34 80, 48 80 C 60 80, 72 80, 80 80"] },
+      { ch: "な", strokes: ["M 22 34 L 56 30",
+                            "M 42 20 C 40 40, 34 60, 22 76",
+                            "M 62 32 C 66 36, 70 40, 74 46",
+                            "M 58 44 L 58 68 C 58 78, 42 80, 42 72 C 42 64, 60 64, 78 76"] },
       { ch: "に", strokes: ["M 28 24 C 26 44, 26 62, 24 78", "M 50 36 L 78 33", "M 48 70 L 80 67"] },
-      { ch: "ぬ", strokes: ["M 26 32 C 34 48, 40 64, 44 78",
-                            "M 58 22 C 38 32, 24 52, 30 68 C 36 82, 58 82, 66 68 C 72 56, 64 48, 54 52 C 44 56, 46 70, 60 74 C 74 78, 82 66, 76 56"] },
-      { ch: "ね", strokes: ["M 26 26 C 26 46, 26 64, 24 80",
-                            "M 42 30 C 54 26, 66 30, 66 40 C 66 52, 50 60, 42 68 C 34 76, 44 86, 58 82 C 72 78, 78 62, 66 54 C 56 48, 44 56, 48 68"] },
-      { ch: "の", strokes: ["M 60 36 C 54 26, 42 22, 34 30 C 24 40, 24 62, 36 72 C 48 82, 64 74, 68 58 C 71 46, 68 34, 62 28"] },
+      { ch: "ぬ", strokes: ["M 26 30 C 32 46, 37 62, 42 76",
+                            "M 60 26 C 44 36, 30 50, 30 64 C 30 78, 46 82, 60 78 C 76 72, 80 56, 66 52 C 56 50, 54 64, 62 72 C 68 78, 76 78, 82 72"] },
+      { ch: "ね", strokes: ["M 28 22 C 28 42, 27 62, 26 80",
+                            "M 20 38 L 44 34 C 38 44, 32 54, 26 62 C 38 46, 52 38, 64 40 C 78 44, 78 62, 72 72 C 66 82, 52 82, 50 74 C 48 66, 62 64, 70 70 C 74 74, 78 78, 82 82"] },
+      { ch: "の", strokes: ["M 54 30 C 50 44, 46 58, 38 68 C 30 76, 22 62, 24 50 C 26 32, 42 24, 56 26 C 74 28, 82 42, 80 56 C 78 70, 68 78, 58 80"] },
       { ch: "は", strokes: ["M 26 24 C 24 44, 24 64, 22 80", "M 36 44 L 60 42",
                             "M 54 26 C 54 44, 52 58, 56 68 C 60 78, 72 80, 80 70"] },
       { ch: "ひ", strokes: ["M 26 38 C 34 30, 42 36, 42 48 C 42 60, 36 72, 44 78 C 56 86, 74 76, 78 60"] },
-      { ch: "ふ", strokes: ["M 50 20 C 48 26, 46 30, 44 34",
-                            "M 40 42 C 30 50, 26 64, 32 72 C 40 82, 54 76, 54 64",
-                            "M 26 58 L 22 70", "M 66 58 L 72 70"] },
+      { ch: "ふ", strokes: ["M 46 22 C 50 25, 53 28, 55 32",
+                            "M 50 38 C 42 48, 38 60, 44 70 C 50 78, 60 74, 60 66",
+                            "M 30 54 C 27 60, 25 65, 22 70",
+                            "M 68 52 C 73 58, 76 64, 78 70"] },
       { ch: "へ", strokes: ["M 24 58 C 36 46, 46 38, 52 38 C 58 38, 68 50, 80 64"] },
       { ch: "ほ", strokes: ["M 26 22 C 24 44, 24 64, 22 80", "M 44 32 L 78 30", "M 44 54 L 76 52",
                             "M 62 22 C 62 44, 60 62, 64 72 C 68 80, 78 80, 84 72"] },
       { ch: "ま", strokes: ["M 24 30 L 72 28", "M 24 54 L 74 52",
                             "M 56 16 C 54 40, 50 62, 50 70 C 50 80, 62 84, 72 76"] },
-      { ch: "み", strokes: ["M 26 34 C 44 28, 62 32, 60 44 C 58 54, 40 60, 28 62 C 42 64, 54 70, 56 80",
-                            "M 52 18 C 54 38, 58 56, 66 70"] },
+      { ch: "み", strokes: ["M 28 30 L 54 28 C 48 42, 40 54, 32 62 C 22 72, 30 82, 42 76 C 52 70, 62 64, 80 62",
+                            "M 64 34 C 64 52, 62 70, 56 84"] },
       { ch: "む", strokes: ["M 22 36 L 66 32",
                             "M 46 18 C 46 40, 42 58, 36 70 C 32 80, 44 84, 52 76 C 60 68, 54 58, 44 60",
                             "M 76 44 L 80 58"] },
@@ -1921,8 +1918,8 @@
                             "M 60 54 C 66 60, 72 66, 78 72"] },
       { ch: "ゆ", strokes: ["M 36 26 C 46 38, 50 52, 48 62 C 46 74, 32 78, 28 68 C 24 56, 40 44, 58 42 C 72 40, 78 48, 74 58",
                             "M 64 20 C 62 40, 60 60, 58 78"] },
-      { ch: "よ", strokes: ["M 48 18 C 46 38, 44 58, 44 68",
-                            "M 26 42 L 66 40 C 60 56, 44 66, 34 70 C 48 68, 64 72, 62 80 C 60 86, 46 86, 40 78"] },
+      { ch: "よ", strokes: ["M 50 40 L 74 38",
+                            "M 48 20 C 48 38, 48 56, 48 70 C 48 78, 36 80, 32 74 C 28 66, 42 60, 56 66 C 64 70, 72 76, 78 80"] },
       { ch: "ら", strokes: ["M 34 20 C 42 24, 52 26, 60 26",
                             "M 30 42 C 46 36, 66 40, 68 54 C 70 70, 52 80, 32 80"] },
       { ch: "り", strokes: ["M 36 24 C 34 42, 32 58, 30 70",
@@ -1933,9 +1930,9 @@
       { ch: "ろ", strokes: ["M 28 28 L 68 26 C 58 40, 46 52, 38 60 C 56 56, 72 62, 72 72 C 72 84, 54 86, 44 78"] },
       { ch: "わ", strokes: ["M 26 26 C 26 46, 26 64, 24 80",
                             "M 46 28 C 56 28, 64 32, 66 40 C 68 52, 56 64, 48 72 C 60 76, 74 70, 78 58"] },
-      { ch: "を", strokes: ["M 24 30 L 68 28",
-                            "M 46 18 C 44 34, 40 46, 32 54 C 44 56, 54 62, 54 70",
-                            "M 24 64 C 34 74, 50 82, 72 80"] },
+      { ch: "を", strokes: ["M 26 30 L 66 28",
+                            "M 48 20 C 44 32, 38 44, 30 54 C 42 48, 54 44, 62 48",
+                            "M 66 46 C 54 54, 42 62, 42 70 C 42 80, 60 82, 80 80"] },
       { ch: "ん", strokes: ["M 26 34 C 30 26, 38 22, 42 28 C 46 36, 40 50, 32 62 C 26 72, 34 82, 48 80 C 62 78, 72 66, 76 54"] }
     ],
     kata: [
@@ -1959,7 +1956,7 @@
       { ch: "ソ", strokes: ["M 30 28 L 40 36", "M 68 24 C 66 46, 58 66, 38 80"] },
       { ch: "タ", strokes: ["M 30 26 L 66 24 C 66 46, 62 66, 52 80", "M 44 38 C 36 48, 28 56, 20 62",
                             "M 44 48 C 52 58, 58 66, 64 74"] },
-      { ch: "チ", strokes: ["M 30 24 C 28 32, 24 40, 18 46", "M 26 42 L 74 38", "M 52 40 C 52 58, 50 72, 46 82"] },
+      { ch: "チ", strokes: ["M 68 18 C 56 24, 42 28, 28 30", "M 22 46 L 78 42", "M 50 30 C 51 52, 50 70, 42 84"] },
       { ch: "ツ", strokes: ["M 26 26 L 34 34", "M 48 26 L 56 34", "M 74 24 C 74 48, 66 68, 36 78"] },
       { ch: "テ", strokes: ["M 28 24 L 72 22", "M 22 44 L 78 42", "M 52 44 C 52 62, 50 74, 46 84"] },
       { ch: "ト", strokes: ["M 38 20 C 38 44, 38 62, 38 80", "M 38 46 C 50 52, 62 60, 72 70"] },
@@ -1981,7 +1978,7 @@
       { ch: "メ", strokes: ["M 28 30 C 42 46, 56 62, 70 78", "M 72 26 C 58 44, 44 62, 26 80"] },
       { ch: "モ", strokes: ["M 26 32 L 70 30", "M 22 54 L 74 50",
                             "M 52 18 C 50 42, 48 62, 48 72 C 48 82, 60 84, 70 76"] },
-      { ch: "ヤ", strokes: ["M 24 40 C 42 36, 62 34, 76 38", "M 54 20 C 52 42, 50 62, 46 80"] },
+      { ch: "ヤ", strokes: ["M 20 44 L 78 36 C 74 44, 68 50, 60 56", "M 40 18 C 43 40, 47 62, 52 84"] },
       { ch: "ユ", strokes: ["M 30 28 L 72 26 C 72 44, 72 58, 70 70", "M 22 74 L 78 72"] },
       { ch: "ヨ", strokes: ["M 28 26 L 70 24 C 70 42, 70 58, 68 74", "M 34 48 L 68 46", "M 28 74 L 68 72"] },
       { ch: "ラ", strokes: ["M 34 24 L 68 22", "M 26 44 L 74 42 C 72 62, 62 76, 44 84"] },
@@ -2012,44 +2009,6 @@
     nextTrace();
   }
 
-  // お手本の字を、決まった枠（LETTER_BOX）にそろえて置く。
-  // フォントによって字の大きさが違うので、実際に測ってから合わせる
-  function addGlyph(svg, ch) {
-    try {
-      var box = LETTER_BOX;
-      var ctx = document.createElement("canvas").getContext("2d");
-      ctx.font = '800 100px ' + getComputedStyle(document.body).fontFamily;
-      var m = ctx.measureText(ch);
-      var w = m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
-      var h = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
-      if (!w || !h) return;
-      var s = Math.min(box.w / w, box.h / h);
-      var t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      t.setAttribute("class", "tr-glyph");
-      t.setAttribute("x", (box.x + (box.w - w * s) / 2 + m.actualBoundingBoxLeft * s).toFixed(1));
-      t.setAttribute("y", (box.y + (box.h - h * s) / 2 + m.actualBoundingBoxAscent * s).toFixed(1));
-      t.setAttribute("font-size", (100 * s).toFixed(1));
-      t.textContent = ch;
-      svg.insertBefore(t, svg.firstChild); // 線より後ろに置く
-      return { x: box.x + (box.w - w * s) / 2, y: box.y + (box.h - h * s) / 2, w: w * s, h: h * s };
-    } catch (e) { return null; }
-  }
-
-  // なぞる線を、お手本の字にぴったり重ねる（字の中心と大きさに合わせる）
-  function fitStrokes(svg, ink) {
-    var g = svg.querySelector(".tr-fit");
-    if (!g || !ink) return;
-    g.removeAttribute("transform");
-    var b = g.getBBox();
-    if (!b.width || !b.height) return;
-    var pad = 5.5; // なぞる線は字の中心を通るので、字の外側より内側になる
-    var s = Math.min((ink.w - pad * 2) / b.width, (ink.h - pad * 2) / b.height);
-    s = Math.max(0.8, Math.min(1.25, s)); // 変えすぎない
-    var tx = ink.x + ink.w / 2 - (b.x + b.width / 2) * s;
-    var ty = ink.y + ink.h / 2 - (b.y + b.height / 2) * s;
-    g.setAttribute("transform", "translate(" + tx.toFixed(2) + "," + ty.toFixed(2) + ") scale(" + s.toFixed(3) + ")");
-  }
-
   function nextTrace() {
     if (tr.i >= TRACE_ROUNDS) { finish(TRACE_ROUNDS); return; }
     drawDots("tr-dots", TRACE_ROUNDS, tr.i);
@@ -2057,13 +2016,11 @@
     document.getElementById("tr-prompt").textContent = item.ch ? item.ch + " なぞって" : "ゆびで なぞって";
     var area = document.getElementById("trace-area");
     area.innerHTML =
-      '<svg class="trace-svg' + (item.ch ? " on-letter" : "") + '" viewBox="' + (item.ch ? LETTER_VB : "0 0 100 100") + '" preserveAspectRatio="xMidYMid meet">' +
-      '<g class="tr-fit">' +
+      '<svg class="trace-svg" viewBox="' + (item.ch ? LETTER_VB : "0 0 100 100") + '" preserveAspectRatio="xMidYMid meet">' +
       item.strokes.map(function (d) { return '<path class="tr-track" d="' + d + '"/>'; }).join("") +
       item.strokes.map(function (d) { return '<path class="tr-done" d="' + d + '"/>'; }).join("") +
-      '</g><circle class="tr-goal" r="4.5"/><circle class="tr-cursor" r="6"/></svg>';
+      '<circle class="tr-goal" r="4.5"/><circle class="tr-cursor" r="6"/></svg>';
     tr.svg = area.querySelector("svg");
-    if (item.ch) fitStrokes(tr.svg, addGlyph(tr.svg, item.ch));
     // まだ なぞっていない画は、緑の線を隠しておく
     Array.prototype.forEach.call(tr.svg.querySelectorAll(".tr-done"), function (p) {
       var l = p.getTotalLength();
@@ -2406,7 +2363,7 @@
             "・「あそぶ子に合わせる」で 2〜3さい にすると、選ぶものが2つになり、パズル・きおくのピースも少なくなる<br>" +
             "・なぞり／あいうえお／おえかきは記録なし。ゆびが少しずれても進むので、小さい子でも最後まで行ける<br>" +
             "・なぞりは「よこ線→なみ→うずまき」のように、やさしい順で3つ<br>" +
-            "・あいうえお／カタカナ／すうじ なぞり は、お手本の字の上を書く順に1画ずつ。" +
+            "・あいうえお／カタカナ／すうじ なぞり は、書く順に1画ずつ（いまの画は濃く、次の画はうすく）。" +
             "五十音の並びでとなり合う3文字が出る（あ・い・う → か・き・く…）<br>" +
             "・パズルは1回3つで、ピースが2→3→4と増える。ちがう場所に置くと戻るだけで、1回まちがえるとそのピースと正しい場所に枠が出る。" +
             "指で動かすほか、ピースをタップ→置く場所をタップ でも置ける<br>" +
