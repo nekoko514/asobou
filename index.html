@@ -186,8 +186,13 @@
     .menu-card .ico { font-size: 2.4rem; width: 1.75em; height: 1.75em; }
     .menu-card .label { font-size: 1.35rem; }
   }
-  /* あそびが増えても、iPad の横向きなら1画面に収まるように少しつめる */
-  @media (min-width: 1100px) { .menu-card { padding: 16px 8px 14px; } }
+  /* あそびが増えても、iPad の横向きなら1画面に収まるように少しつめる（30こ＝6列×5段） */
+  @media (min-width: 1100px) {
+    .menu-grid { gap: 14px; }
+    .menu-card { padding: 13px 8px 11px; gap: 7px; }
+    .menu-card .ico { font-size: 2.25rem; width: 1.6em; height: 1.6em; }
+    .menu-card .label { font-size: 1.25rem; line-height: 1.25; }
+  }
 
   /* ---------- 課題画面 ---------- */
   .task-body { display: flex; flex-direction: column; }
@@ -550,13 +555,194 @@
     margin: -8px -12px 0; padding: 8px 12px 16px;
   }
 
+  /* ---------- 共通：小さな切りかえボタン（もっきんの うた など） ---------- */
+  .pills { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 0 0 12px; }
+  .pill {
+    border: none; border-radius: 999px; padding: 10px 18px;
+    font-family: inherit; font-size: 1.15rem; font-weight: 800; color: var(--ink);
+    background: var(--card); cursor: pointer;
+    box-shadow: 0 4px 0 var(--edge), 0 8px 14px rgba(59,49,41,.06);
+    transition: transform .1s ease, box-shadow .1s ease;
+  }
+  .pill:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge); }
+  .pill.on { background: var(--accent-soft); box-shadow: inset 0 0 0 3px var(--accent), 0 4px 0 var(--accent-edge); }
+  @media (max-height: 500px) { .pill { padding: 6px 14px; font-size: 1rem; } }
+
+  /* ---------- もっきん ---------- */
+  .song-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; min-height: 16px; margin: 0 0 6px; }
+  .song-dots span { width: 14px; height: 14px; border-radius: 50%; background: var(--star-off); }
+  .song-dots span.done { background: var(--c); }
+  .song-dots span.now { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--warm); }
+  /* 木のわくに、色の板をならべる。横長の画面では横に、たて長の画面では たてに */
+  .xylo {
+    flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+    gap: clamp(6px, 1.3vw, 14px); padding: 18px 16px 22px; margin-bottom: 8px; touch-action: none;
+    border-radius: 30px; background: linear-gradient(#f5e7cf, #e8d2ae);
+    box-shadow: inset 0 3px 0 rgba(255,255,255,.55), 0 6px 0 #d6bb92, 0 12px 24px rgba(59,49,41,.08);
+  }
+  .mk-key {
+    --c: #e53935; position: relative; flex: 1 1 0; max-width: 118px; height: calc(var(--len) * 100%);
+    border-radius: 18px; cursor: pointer;
+    background: linear-gradient(90deg, rgba(0,0,0,.08), rgba(255,255,255,.22) 35%, rgba(0,0,0,.06)), var(--c);
+    box-shadow: inset 0 -6px 0 rgba(0,0,0,.14), 0 5px 0 rgba(59,49,41,.18);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 14%;
+  }
+  /* 板を止めている くぎ */
+  .mk-key::before, .mk-key::after {
+    content: ""; position: absolute; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff, #c8b9a0);
+  }
+  .mk-key::before { top: 8%; }
+  .mk-key::after { bottom: 5%; }
+  .mk-name { color: #fff; font-weight: 800; font-size: clamp(1.1rem, 2.6vw, 1.7rem); text-shadow: 0 2px 0 rgba(0,0,0,.2); pointer-events: none; }
+  .mk-star { font-size: clamp(1.4rem, 3vw, 2.2rem); line-height: 1; margin-bottom: auto; margin-top: 60%; visibility: hidden; pointer-events: none; }
+  .mk-key.next { box-shadow: 0 0 0 5px #fff, 0 0 0 9px var(--warm), 0 5px 0 rgba(59,49,41,.18); }
+  .mk-key.next .mk-star { visibility: visible; animation: star-pop .5s ease-out; }
+  .mk-key.hit { animation: key-hit .28s ease; }
+  @keyframes key-hit { 30% { scale: .95; filter: brightness(1.18); } }
+  @media (orientation: portrait) {
+    .xylo { flex-direction: column; padding: 16px 18px; }
+    .mk-key { flex: 1 1 0; max-width: none; max-height: 96px; width: calc(var(--len) * 100%); height: auto;
+              flex-direction: row; justify-content: flex-end; padding: 0 14% 0 0; }
+    .mk-key::before, .mk-key::after { top: 50%; margin-top: -6px; bottom: auto; }
+    .mk-key::before { left: 7%; }
+    .mk-key::after { left: auto; right: 5%; }
+    .mk-star { margin: 0 auto 0 22%; }
+  }
+  /* 板をたたくと、音符が ふわっと上がる */
+  .fnote { position: fixed; z-index: 60; pointer-events: none; font-size: 30px; font-weight: 800; line-height: 1;
+           margin: -15px 0 0 -10px; animation: fnote .9s ease-out forwards; }
+  @keyframes fnote { to { translate: var(--dx) -90px; opacity: 0; scale: 1.3; } }
+
+  /* ---------- いないいないばあ ---------- */
+  .baa-stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; cursor: pointer; }
+  .baa-animal { font-size: min(40vh, 52vw); line-height: 1; }
+  .baa-animal.show { animation: hop 1.7s ease-in-out infinite; }
+  /* 布は上へ持ち上がる。ゆれは中の絵だけ（持ち上げる動きとぶつからないように） */
+  .baa-cloth {
+    position: absolute; left: 50%; top: 50%; width: min(52vh, 68vw); height: min(52vh, 68vw);
+    margin: calc(min(52vh, 68vw) / -2) 0 0 calc(min(52vh, 68vw) / -2);
+    transition: translate .5s cubic-bezier(.3, .7, .3, 1), rotate .5s ease, opacity .45s ease;
+  }
+  .baa-cloth.up { translate: 0 -115%; rotate: -12deg; opacity: 0; }
+  .baa-cloth svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 10px 12px rgba(59,49,41,.18));
+                   animation: cloth-sway 2.2s ease-in-out infinite alternate; transform-origin: 50% 10%; }
+  @keyframes cloth-sway { from { rotate: -2.5deg; } to { rotate: 2.5deg; } }
+
+  /* ---------- ぬりえ ---------- */
+  .nurie-area {
+    flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 12px;
+    background: var(--card); border-radius: 26px; box-shadow: 0 6px 0 var(--edge), var(--shadow);
+  }
+  .nurie-svg { width: 100%; height: 100%; touch-action: manipulation; }
+  .rg { fill: #fff; stroke: #4a3f35; stroke-width: 1.4; stroke-linejoin: round; cursor: pointer; transition: fill .25s ease; }
+  .nurie-svg .dt { pointer-events: none; }
+  .pen.white { box-shadow: inset 0 0 0 2px #ddd2c2, 0 3px 0 rgba(59,49,41,.15), 0 6px 12px rgba(59,49,41,.12); }
+
+  /* ---------- てんつなぎ ---------- */
+  .ts-area { flex: 1 1 0; min-height: calc(var(--k) * 200px); display: flex; align-items: center; justify-content: center; padding-bottom: 16px; }
+  .ts-svg { width: 100%; height: 100%; touch-action: none; }
+  .ts-dot { fill: #fff; stroke: #5a4a36; stroke-width: 1.1; transform-box: fill-box; transform-origin: center; }
+  .ts-dot.on { fill: var(--accent); stroke: var(--accent-edge); }
+  .ts-dot.start, .ts-dot.hint { stroke: var(--warm); stroke-width: 1.7; animation: cursor-pulse 1s ease-in-out infinite alternate; }
+  .ts-dot.nope { animation: shake .4s ease; }
+  .ts-num { font-size: 6.5px; font-weight: 800; fill: var(--ink); text-anchor: middle; dominant-baseline: central;
+            paint-order: stroke; stroke: #fff; stroke-width: 2px; stroke-linejoin: round; pointer-events: none; }
+  .ts-num.on { fill: var(--accent-edge); }
+  .ts-line { stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; transition: stroke-dashoffset .25s ease-out; }
+  .ts-art { opacity: 0; transition: opacity .7s ease; }
+  .ts-art.on { opacity: 1; }
+
+  /* ---------- めいろ ---------- */
+  .mz-area { flex: 1 1 0; min-height: calc(var(--k) * 200px); display: flex; align-items: center; justify-content: center; padding-bottom: 14px; }
+  .mz-svg { width: 100%; height: 100%; touch-action: none; }
+  .mz-floor { fill: #fff8e8; }
+  .mz-goalcell { fill: #ffe7c2; }
+  /* 1マス＝10目盛り */
+  .mz-wall { fill: none; stroke: #9a744c; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .mz-trail { fill: none; stroke: #9fdcbc; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .mz-emo { font-size: 6.4px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .mz-hero { transition: transform .09s linear; }
+  .mz-hero text { transform-box: fill-box; transform-origin: center; }
+  .mz-hero.yay text { animation: mz-hop .5s ease-in-out 3; }
+  @keyframes mz-hop { 0%, 100% { translate: 0 0; } 45% { translate: 0 -3px; scale: 1.1; } }
+  .mz-goal { transform-box: fill-box; transform-origin: center; animation: goal-wiggle 1.4s ease-in-out infinite; }
+  @keyframes goal-wiggle { 0%, 100% { rotate: -8deg; } 50% { rotate: 8deg; } }
+
+  /* ---------- ことばづくり ---------- */
+  /* 大きい画面ほど大きく（--T：文字カード1まいの大きさ） */
+  #kz-body { --T: min(calc(var(--k) * 112px), 13vh, 19vw); }
+  .kz-pic { align-self: center; font-size: min(calc(var(--k) * 150px), 19vh); line-height: 1; margin: -6px 0 clamp(12px, 3vh, 26px); }
+  .kz-pic.yay { animation: pick .6s ease; }
+  .kz-row { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(10px, 2vw, 18px); }
+  .kz-slots { margin-bottom: clamp(18px, 4.5vh, 40px); }
+  .kz-slot, .kz-tile { width: var(--T); height: var(--T); border-radius: 20px; }
+  .kz-slot { position: relative; border: 3px dashed #d8c9b2; background: rgba(255,255,255,.6); display: grid; place-items: center; }
+  .kz-slot .ghost-ch { font-size: calc(var(--T) * .62); font-weight: 800; color: #e9e0d0; }
+  .kz-tile {
+    position: relative; border: none; padding: 0; cursor: pointer;
+    font-family: inherit; font-size: calc(var(--T) * .62); font-weight: 800; color: var(--ink);
+    background: linear-gradient(#fff3d6, #f6dfb0); box-shadow: 0 6px 0 #dcb97c, 0 10px 18px rgba(59,49,41,.1);
+    transition: translate .3s ease;
+  }
+  .kz-tile.hint { box-shadow: 0 0 0 4px var(--warm), 0 6px 0 #dcb97c; }
+  .kz-tile.shake { animation: shake .4s ease; }
+  .kz-slot .kz-tile { position: absolute; left: -3px; top: -3px; cursor: default; box-shadow: 0 4px 0 #dcb97c; }
+  .kz-slot .kz-tile.snap { animation: snap .4s ease .22s; }
+  @keyframes shake { 20% { translate: -7px 0; } 40% { translate: 7px 0; } 60% { translate: -4px 0; } 80% { translate: 3px 0; } }
+  /* メニューの絵：文字の積み木 */
+  .blk-ico { display: flex; gap: .08em; }
+  .blk-ico b {
+    width: 1.3em; height: 1.3em; display: grid; place-items: center; font-size: .42em; font-weight: 800;
+    background: #f6dfb0; border-radius: .3em; box-shadow: 0 .12em 0 #dcb97c;
+  }
+
+  /* ---------- シール ---------- */
+  .big-btn.stickers { --c1: #f1e7fd; --c2: #c9b0ea; }
+  .stk-count { font-size: 1.3rem; font-weight: 800; color: var(--ink-soft); padding-right: 70px; }
+  /* シールをはるページ：空と草原 */
+  .stk-page {
+    position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: 30px;
+    background:
+      radial-gradient(56px 56px at 88% 16%, #ffe38a 0 60%, rgba(255,227,138,.35) 61%, transparent 100%),
+      radial-gradient(80px 26px at 20% 18%, rgba(255,255,255,.95), transparent 70%),
+      radial-gradient(110px 34px at 28% 22%, rgba(255,255,255,.8), transparent 70%),
+      radial-gradient(90px 28px at 62% 12%, rgba(255,255,255,.85), transparent 70%),
+      radial-gradient(130% 60% at 25% 100%, #a8dc8f 0 55%, transparent 56%),
+      radial-gradient(120% 55% at 90% 100%, #9bd382 0 55%, transparent 56%),
+      linear-gradient(#cfe9fb, #eaf6f4 70%);
+    box-shadow: inset 0 0 0 4px rgba(255,255,255,.7), 0 10px 24px rgba(59,49,41,.06);
+  }
+  /* 白いふちどりのある、切りぬきシール（たくさん はっても重くならないよう、文字の影でふちどる） */
+  .stk {
+    position: absolute; font-size: calc(var(--k) * 64px); line-height: 1; cursor: grab; touch-action: none;
+    transform: translate(-50%, -50%) rotate(var(--r, 0deg));
+    text-shadow: 3px 0 #fff, -3px 0 #fff, 0 3px #fff, 0 -3px #fff, 2px 2px #fff, -2px 2px #fff, 2px -2px #fff, -2px -2px #fff,
+                 0 5px 6px rgba(59,49,41,.22);
+  }
+  .stk.lift { z-index: 20; scale: 1.15; cursor: grabbing; }
+  .stk.pop { animation: stk-pop .45s ease-out; }
+  @keyframes stk-pop { 0% { scale: .3; } 60% { scale: 1.25; } 100% { scale: 1; } }
+  .stk-tray {
+    display: flex; flex-wrap: wrap; gap: 14px 18px; justify-content: center; align-content: flex-start;
+    max-height: calc(var(--k) * 190px); overflow-y: auto; padding: 16px 8px 4px; min-height: calc(var(--k) * 90px);
+  }
+  .stk-tray .stk { position: relative; transform: rotate(var(--r, 0deg)); cursor: pointer; touch-action: manipulation; }
+  .stk-tray .empty { padding: 10px; }
+  /* おしまい画面で もらえるシール */
+  .finish-sticker { display: flex; align-items: center; gap: 12px; font-size: 1.4rem; font-weight: 800; color: var(--ink-soft); min-height: 1em; }
+  .finish-sticker .stk { position: relative; transform: rotate(var(--r, 0deg)); animation: stk-pop .5s ease-out backwards; font-size: calc(var(--k) * 58px); cursor: default; }
+
   /* 動きを減らす設定の端末では、飾りの動きを止める */
   @media (prefers-reduced-motion: reduce) {
     .screen.on, .choice, .dot.just, .stars .dot, .bubble, .balloon, .pz-board.done,
     .logo span, .menu-card, .choice.right, .prompt.pop, .mascot, .tr-cursor,
-    .pz-slot .pz-piece.snap, .sched-item .check.just { animation: none; }
+    .pz-slot .pz-piece.snap, .sched-item .check.just,
+    .mk-key.hit, .mk-key.next .mk-star, .baa-animal.show, .baa-cloth svg, .ts-dot.start, .ts-dot.hint, .ts-dot.nope,
+    .mz-goal, .mz-hero.yay text, .kz-pic.yay, .kz-tile.shake, .kz-slot .kz-tile.snap, .stk.pop,
+    .finish-sticker .stk { animation: none; }
     .balloon { transition: transform .25s ease, opacity .25s ease; }
-    .spark { display: none; }
+    .spark, .fnote { display: none; }
   }
 </style>
 </head>
@@ -569,6 +755,7 @@
       <h1 class="logo" aria-label="あそぼう"><span>あ</span><span>そ</span><span>ぼ</span><span>う</span></h1>
       <button class="big-btn play" data-go="menu"><span class="ico">🧩</span>あそぶ</button>
       <button class="big-btn today" data-go="sched"><span class="ico">📋</span>きょう</button>
+      <button class="big-btn stickers" data-go="stickers"><span class="ico">📒</span>シール</button>
     </div>
   </section>
 
@@ -645,11 +832,88 @@
     <div class="draw-tools" id="draw-tools"></div>
   </section>
 
+  <!-- もっきん -->
+  <section class="screen" id="s-mokkin">
+    <div class="bar"><button class="back" data-go="menu">← もどる</button></div>
+    <div class="pills" id="mk-pills"></div>
+    <div class="song-dots" id="song-dots"></div>
+    <div class="xylo" id="xylo"></div>
+  </section>
+
+  <!-- いないいないばあ -->
+  <section class="screen" id="s-baa">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+      <div class="dots many" id="baa-dots"></div>
+    </div>
+    <div class="prompt" id="baa-prompt">いない いない…</div>
+    <div class="baa-stage" id="baa-stage">
+      <div class="baa-animal" id="baa-animal"></div>
+      <div class="baa-cloth" id="baa-cloth"></div>
+    </div>
+  </section>
+
+  <!-- ぬりえ -->
+  <section class="screen" id="s-nurie">
+    <div class="bar"><button class="back" data-go="menu">← もどる</button></div>
+    <div class="nurie-area" id="nurie-area"></div>
+    <div class="draw-tools" id="nurie-tools"></div>
+  </section>
+
+  <!-- てんつなぎ -->
+  <section class="screen" id="s-tentsu">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+      <div class="dots" id="ts-dots"></div>
+    </div>
+    <div class="scroll task-body" id="ts-body">
+      <div class="prompt" id="ts-prompt">1から つないで</div>
+      <div class="ts-area" id="ts-area"></div>
+    </div>
+  </section>
+
+  <!-- めいろ -->
+  <section class="screen" id="s-maze">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+      <div class="dots" id="mz-dots"></div>
+    </div>
+    <div class="scroll task-body" id="mz-body">
+      <div class="prompt" id="mz-prompt"></div>
+      <div class="mz-area" id="mz-area"></div>
+    </div>
+  </section>
+
+  <!-- ことばづくり -->
+  <section class="screen" id="s-word">
+    <div class="bar">
+      <button class="back" data-go="menu">← もどる</button>
+      <div class="dots" id="kz-dots"></div>
+    </div>
+    <div class="scroll task-body" id="kz-body">
+      <div class="prompt" id="kz-prompt">ことば つくって</div>
+      <div class="kz-pic" id="kz-pic"></div>
+      <div class="kz-row kz-slots" id="kz-slots"></div>
+      <div class="kz-row" id="kz-tiles"></div>
+    </div>
+  </section>
+
+  <!-- シール -->
+  <section class="screen" id="s-stickers">
+    <div class="bar">
+      <button class="back" data-go="home">← もどる</button>
+      <div class="stk-count" id="stk-count"></div>
+    </div>
+    <div class="stk-page" id="stk-page"></div>
+    <div class="stk-tray" id="stk-tray"></div>
+  </section>
+
   <!-- おわり -->
   <section class="screen" id="s-finish">
     <div class="finish">
       <div class="mascot" id="finish-mascot"></div>
       <div class="stars" id="finish-stars"></div>
+      <div class="finish-sticker" id="finish-sticker"></div>
       <div class="txt">おしまい</div>
       <button class="big-btn next" data-go="menu">つぎへ</button>
     </div>
@@ -682,6 +946,9 @@
   var KEY_HIDDEN = "asobou_hidden_v1";
   var KEY_SOUND = "asobou_sound_v1";
   var KEY_MODE = "asobou_mode_v1";
+  var KEY_VOICE = "asobou_voice_v1";       // よみあげ
+  var KEY_STICKERS = "asobou_stickers_v1"; // もらったシール（はった場所も）
+  var KEY_KNOWN = "asobou_known_v1";       // 前に開いたときにあった あそび（新しく増えたものを見分ける）
 
   // 以前の名前で保存した記録・スケジュールを引き継ぐ（元のデータは消さない）
   [["dev_log_v1", KEY_LOG], ["dev_sched_v1", KEY_SCHED], ["dev_sched_done_v1", KEY_SCHED_DONE]].forEach(function (p) {
@@ -717,6 +984,10 @@
   var hidden = load(KEY_HIDDEN, []); // 保護者メニューで「メニューに出さない」にした あそび
   // ちいさい子むけ：えらぶものを2つにして、パズルなどのピースも少なめにする
   var easy = load(KEY_MODE, { easy: false }).easy === true;
+  // シール：{ e: 絵, on: ページにはったか, x・y: ページの中の位置（0〜1）, r: かたむき }
+  var stickers = load(KEY_STICKERS, []).filter(function (s) {
+    return s && typeof s.e === "string" && typeof s.x === "number" && typeof s.y === "number";
+  });
 
   function newId() { return "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function esc(s) {
@@ -797,6 +1068,9 @@
     pop2: function () { beep(560, .15, { to: 150, type: "triangle", vol: .55 }); },  // ふうせん
     place: function () { beep(392, .12, { type: "triangle", vol: .5 }); beep(784, .09, { vol: .18 }); },
     soft: function () { beep(300, .1, { vol: .22 }); },                              // ピースが戻るとき（やわらかく短い）
+    baa: function () { beep(523.25, .12, { type: "triangle", vol: .4 }); beep(783.99, .14, { at: .1, type: "triangle", vol: .4 }); beep(1046.5, .3, { at: .2, vol: .35 }); },
+    peta: function () { beep(440, .07, { type: "triangle", vol: .35 }); beep(880, .12, { at: .05, vol: .2 }); }, // シールをはる
+    step: function () { beep(620, .05, { type: "triangle", vol: .12 }); },          // めいろで1マス進む
     check: function () { beep(659.25, .12, { type: "triangle", vol: .4 }); beep(987.77, .2, { at: .08, vol: .3 }); },
     finish: function () {
       [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) {
@@ -808,6 +1082,56 @@
   // なぞりで、進むほど高くなる音（ドレミソラ…）
   var SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51];
   function note(i) { beep(SCALE[i % SCALE.length], .12, { type: "triangle", vol: .28 }); }
+  // もっきんの音：やわらかく長めに響く音に、すぐ消える高い音を重ねて、木をたたいた感じにする
+  function mallet(f, at) {
+    beep(f, .9, { vol: .5, at: at || 0 });
+    beep(f * 3.99, .2, { vol: .09, at: at || 0 });
+  }
+
+  /* ============ よみあげ ============ */
+  // お題などを端末の声で読む（iPad の日本語の声）。保護者メニューで切り替えられる。初めは読む
+  var voiceOn = load(KEY_VOICE, { on: true }).on !== false;
+  var jaVoice = null;
+  var synth = window.speechSynthesis || null;
+  function pickVoice() {
+    if (!synth) return;
+    var vs = synth.getVoices().filter(function (v) { return /^ja/i.test(v.lang); });
+    // なるべく聞きやすい声（iPad の Kyoko・O-ren など）を選ぶ。なければ最初の日本語の声
+    jaVoice = vs.filter(function (v) { return /kyoko|o-ren|otoya|haruka|nanami|google/i.test(v.name); })[0] || vs[0] || null;
+  }
+  if (synth) {
+    pickVoice();
+    try { synth.addEventListener("voiceschanged", pickVoice); } catch (e) { synth.onvoiceschanged = pickVoice; }
+  }
+  var sayTimer = null;
+  function say(text) {
+    if (!voiceOn || !synth || !window.SpeechSynthesisUtterance || !text) return;
+    try {
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = "ja-JP";
+      if (jaVoice) u.voice = jaVoice;
+      u.rate = .9;
+      u.pitch = 1.1;
+      // 読んでいる途中なら止めて、いちばん新しいものだけを読む（数字が つぎつぎ続いても順番が入れかわらない）。
+      // iPad は止めた直後に読ませると聞こえないことがあるので、そのときだけ少し待つ
+      var busy = sayTimer !== null || synth.speaking || synth.pending;
+      clearTimeout(sayTimer);
+      sayTimer = null;
+      if (synth.speaking || synth.pending) synth.cancel();
+      if (!busy) { synth.speak(u); return; }
+      sayTimer = setTimeout(function () { sayTimer = null; synth.speak(u); }, 80);
+    } catch (e) {}
+  }
+  function hush() {
+    clearTimeout(sayTimer);
+    sayTimer = null;
+    try { if (synth && (synth.speaking || synth.pending)) synth.cancel(); } catch (e) {}
+  }
+  // お題の白いラベルをタッチすると、もう一度読む
+  document.addEventListener("click", function (e) {
+    var p = e.target.closest && e.target.closest(".prompt");
+    if (p) say(p.getAttribute("data-say") || p.textContent);
+  });
 
   /* ============ 画面遷移 ============ */
   var current = "home";
@@ -818,11 +1142,13 @@
   function go(name) {
     timers.forEach(clearTimeout);
     timers = [];
+    hush(); // 前の画面で読んでいた声は止める
     current = name;
     var ids = {
       home: "s-home", menu: "s-menu", task: "s-task", puzzle: "s-puzzle", pop: "s-pop",
       memory: "s-memory", trace: "s-trace", draw: "s-draw",
-      finish: "s-finish", sched: "s-sched", parent: "s-parent"
+      mokkin: "s-mokkin", baa: "s-baa", nurie: "s-nurie", tentsu: "s-tentsu", maze: "s-maze", word: "s-word",
+      stickers: "s-stickers", finish: "s-finish", sched: "s-sched", parent: "s-parent"
     };
     Object.keys(ids).forEach(function (k) {
       document.getElementById(ids[k]).classList.toggle("on", k === name);
@@ -830,6 +1156,7 @@
     if (name === "menu") renderMenu();
     if (name === "sched") renderSched();
     if (name === "parent") renderParent();
+    if (name === "stickers") renderStickers();
   }
   document.addEventListener("click", function (e) {
     var t = e.target.closest("[data-go]");
@@ -1155,13 +1482,43 @@
     kana: { ico: '<span class="kana-ico">あ</span>', label: "あいうえお", age: 4, start: function () { startTrace("hira"); } },
     kata: { ico: '<span class="kana-ico">ア</span>', label: "カタカナ", age: 4, start: function () { startTrace("kata"); } },
     numtrace: { ico: '<span class="kana-ico">1</span>', label: "すうじ なぞり", age: 4, start: function () { startTrace("num"); } },
-    oekaki: { ico: "🖍️", label: "おえかき", start: startDraw }
+    oekaki: { ico: "🖍️", label: "おえかき", start: startDraw },
+    mokkin: {
+      ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true">' +
+           '<rect x="4" y="14" width="15" height="72" rx="6" fill="#e53935"/><rect x="23" y="20" width="15" height="60" rx="6" fill="#fb8c00"/>' +
+           '<rect x="42" y="26" width="15" height="48" rx="6" fill="#f5c518"/><rect x="61" y="32" width="15" height="36" rx="6" fill="#43a047"/>' +
+           '<rect x="80" y="38" width="15" height="24" rx="6" fill="#1e63d6"/></svg>',
+      label: "もっきん", start: startMokkin
+    },
+    baa: { ico: "🙈", label: "いないいない ばあ", start: startBaa },
+    nurie: {
+      ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true"><g stroke="#4a3f35" stroke-width="4">' +
+           '<circle cx="50" cy="25" r="16" fill="#f48fb1"/><circle cx="75" cy="50" r="16" fill="#fff"/>' +
+           '<circle cx="50" cy="75" r="16" fill="#fdd835"/><circle cx="25" cy="50" r="16" fill="#fff"/>' +
+           '<circle cx="50" cy="50" r="13" fill="#fb8c00"/></g></svg>',
+      label: "ぬりえ", start: startNurie
+    },
+    tentsunagi: {
+      ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true">' +
+           '<polyline points="12,80 32,22 54,70 76,18" fill="none" stroke="#3fae78" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>' +
+           '<g fill="#fff" stroke="#5a4a36" stroke-width="5"><circle cx="12" cy="80" r="8"/><circle cx="32" cy="22" r="8"/>' +
+           '<circle cx="54" cy="70" r="8"/><circle cx="76" cy="18" r="8"/><circle cx="89" cy="70" r="8"/></g></svg>',
+      label: "てんつなぎ", age: 4, start: startTentsu
+    },
+    meiro: {
+      ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true">' +
+           '<rect x="6" y="6" width="88" height="88" rx="12" fill="#fff8e8"/>' +
+           '<path d="M8 8 H92 V92 H8 Z M36 8 V64 M64 36 V92 M8 64 H22 M64 36 H78" fill="none" stroke="#9a744c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>' +
+           '<circle cx="22" cy="24" r="8" fill="#f2a03d"/><circle cx="80" cy="78" r="8" fill="#3fae78"/></svg>',
+      label: "めいろ", age: 4, start: startMaze
+    }
   };
   // 並び順。今までのあそびの位置は変えず、新しいものは後ろに足す
   var MENU_ORDER = [
     "size", "count", "sort", "onoma", "iro", "katachi", "onaji", "kage", "kimochi", "kotoba", "ooi",
     "hame", "eawase", "bubble", "balloon",
-    "pattern", "suuji", "hazure", "memory", "nazori", "kana", "kata", "numtrace", "oekaki"
+    "pattern", "suuji", "hazure", "memory", "nazori", "kana", "kata", "numtrace", "oekaki",
+    "mokkin", "baa", "nurie", "tentsunagi", "meiro", "kotobazukuri"
   ];
   // 保護者メニューの記録に出すもの（自由あそびは記録をとらない）
   function recordedKeys() {
@@ -1178,7 +1535,9 @@
     eawase: ["#e3eeff", "#a7c3f1"], bubble: ["#dff5f7", "#a0dbe2"], balloon: ["#ffe3ea", "#f2a8bb"],
     pattern: ["#e7ecfb", "#b1c0ef"], suuji: ["#fdeede", "#eec79a"], hazure: ["#eef0e2", "#c3caa0"],
     memory: ["#f0e7fb", "#c8b2ec"], nazori: ["#e2f2ec", "#a4d3c2"], oekaki: ["#fdeaf5", "#efb0d5"],
-    kana: ["#fff2d8", "#eccb88"], kata: ["#e6f0e2", "#b0c9a4"], numtrace: ["#e7eef7", "#a9c0da"]
+    kana: ["#fff2d8", "#eccb88"], kata: ["#e6f0e2", "#b0c9a4"], numtrace: ["#e7eef7", "#a9c0da"],
+    mokkin: ["#fff0e0", "#f1c38e"], baa: ["#fde7ee", "#f0b1c4"], nurie: ["#f7ecfd", "#d9b3e8"],
+    tentsunagi: ["#e8f2ff", "#a9c6ee"], meiro: ["#eef6e0", "#bcd796"], kotobazukuri: ["#fff4dc", "#ecc98a"]
   };
 
   function menuItem(k) { return TASKS[k] || PUZZLES[k] || GAMES[k] || PLAYS[k]; }
@@ -1254,6 +1613,7 @@
     pr.classList.remove("pop");
     void pr.offsetWidth; // いったん外してから付け直して、毎回はずませる
     pr.classList.add("pop");
+    say(cur.q.prompt);
     var sample = document.getElementById("sample");
     sample.classList.toggle("on", !!cur.q.sample);
     sample.innerHTML = cur.q.sample ? faceHTML(cur.q.sample) : "";
@@ -1343,10 +1703,11 @@
     save(KEY_LOG, log);
   }
 
-  // おしまい画面。やった数だけ星がならぶ（正解の数ではなく、やりきった数）
+  // おしまい画面。やった数だけ星がならぶ（正解の数ではなく、やりきった数）。
+  // 最後までやると、シールが1まいもらえる（noSticker：おえかきで何もかかずに「できた」を押したときなど）
   var MASCOTS = ["🐻", "🐰", "🐱", "🐶", "🐼", "🐯", "🦊", "🐥", "🐧", "🐸"];
   var lastMascot = null;
-  function finish(n) {
+  function finish(n, noSticker) {
     var m;
     do { m = pick(MASCOTS); } while (m === lastMascot); // 毎回ちがう子が出てくる
     lastMascot = m;
@@ -1361,7 +1722,12 @@
       s.style.animationDelay = (0.15 + i * 0.12).toFixed(2) + "s";
       box.appendChild(s);
     }
+    var gift = noSticker ? null : giveSticker();
+    document.getElementById("finish-sticker").innerHTML = gift
+      ? '<span class="stk" style="--r:' + gift.r + 'deg;animation-delay:' + (0.3 + n * 0.12).toFixed(2) + 's">' + gift.e + '</span>シール ゲット'
+      : "";
     go("finish");
+    say("おしまい");
   }
 
   // 正解・完成・割れたときの、小さな粒（音なし・0.7秒で消える）
@@ -1540,6 +1906,7 @@
     pz.left = sizes[pz.i];
     document.getElementById("pz-body").scrollTop = 0;
     document.getElementById("pz-prompt").textContent = q.prompt;
+    say(q.prompt);
     var area = document.getElementById("pz-area");
     area.innerHTML = "";
     area.appendChild(q.board);
@@ -1736,6 +2103,11 @@
            '<rect x="52" y="22" width="40" height="56" rx="7" fill="#fff" stroke="#d9c9ae" stroke-width="3"/>' +
            '<circle cx="72" cy="50" r="11" fill="#e0533f"/></svg>',
       label: "きおく", age: 2, sizes: [2, 3, 4], easySizes: [2, 2, 3], start: startMemory
+    },
+    // ことばづくり：1回3つ。文字の数が 2→3→4 と増える
+    kotobazukuri: {
+      ico: '<span class="blk-ico"><b>ね</b><b>こ</b></span>',
+      label: "ことばづくり", age: 4, sizes: [2, 3, 4], easySizes: [2, 2, 3], start: startWord
     }
   };
 
@@ -1757,6 +2129,7 @@
     mem.mistakes = 0;
     mem.lock = false;
     drawDots("mem-dots", sizes.length, mem.i);
+    say("おなじ さがして");
     var area = document.getElementById("mem-area");
     area.innerHTML = "";
     area.style.gridTemplateColumns = "repeat(" + (pairs >= 4 ? 4 : pairs === 3 ? 3 : 2) + ", auto)";
@@ -2089,6 +2462,7 @@
     drawDots("tr-dots", TRACE_ROUNDS, tr.i);
     var item = tr.items[tr.i];
     document.getElementById("tr-prompt").textContent = item.ch ? item.ch + " なぞって" : "ゆびで なぞって";
+    say(document.getElementById("tr-prompt").textContent);
     var lines = function (cls) {
       return item.strokes.map(function (d) { return '<path class="' + cls + '" d="' + d + '"/>'; }).join("");
     };
@@ -2228,7 +2602,7 @@
   function startDraw() {
     go("draw");
     var cv = document.getElementById("draw-canvas");
-    draw = { color: DRAW_COLORS[0], drawing: false, ctx: cv.getContext("2d"), cv: cv };
+    draw = { color: DRAW_COLORS[0], drawing: false, ctx: cv.getContext("2d"), cv: cv, strokes: 0 };
     var tools = document.getElementById("draw-tools");
     tools.innerHTML = "";
     DRAW_COLORS.forEach(function (c, i) {
@@ -2248,7 +2622,8 @@
     tools.appendChild(clear);
     var done = el("button", "mini");
     done.textContent = "できた";
-    done.addEventListener("click", function () { play("tap"); finish(0); });
+    // 何か かいてから「できた」を押したときだけ、シールがもらえる
+    done.addEventListener("click", function () { play("tap"); finish(0, draw.strokes < 3); });
     tools.appendChild(done);
     fitCanvas(false);
     cv.addEventListener("pointerdown", drawStart);
@@ -2293,6 +2668,7 @@
   function drawStart(e) {
     e.preventDefault();
     draw.drawing = true;
+    draw.strokes++;
     try { draw.cv.setPointerCapture(e.pointerId); } catch (err) {}
     var p = drawPoint(e);
     draw.ctx.strokeStyle = draw.color;
@@ -2318,6 +2694,831 @@
   window.addEventListener("resize", function () {
     if (current === "draw" && draw) fitCanvas(true);
   });
+
+  /* ============ もっきん（自由あそび・記録なし） ============ */
+  // たたくと音が鳴る。指をすべらせても鳴る。「うた」を選ぶと次にたたく板が光り、さいごまで ひけたら曲を通して聞かせて おしまい
+  var MK_NOTES = [
+    { n: "ド", f: 523.25, c: "#e53935" }, { n: "レ", f: 587.33, c: "#fb8c00" }, { n: "ミ", f: 659.25, c: "#f5c518" },
+    { n: "ファ", f: 698.46, c: "#43a047" }, { n: "ソ", f: 783.99, c: "#29b6f6" }, { n: "ラ", f: 880, c: "#1e63d6" },
+    { n: "シ", f: 987.77, c: "#8e44ad" }, { n: "ド", f: 1046.5, c: "#ec6f9e" }
+  ];
+  // 昔からある曲。notes：ド＝0 … 上のド＝7、beats：音の長さ（1＝4分音符）
+  var SONGS = [
+    { ico: "🐸", name: "かえるのうた",
+      notes: [0, 1, 2, 3, 2, 1, 0, 2, 3, 4, 5, 4, 3, 2, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 2, 1, 0],
+      beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, .5, .5, .5, .5, .5, .5, .5, .5, 1, 1, 2] },
+    { ico: "⭐", name: "きらきらぼし",
+      notes: [0, 0, 4, 4, 5, 5, 4, 3, 3, 2, 2, 1, 1, 0],
+      beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2] },
+    { ico: "🐑", name: "メリーさんのひつじ",
+      notes: [2, 1, 0, 1, 2, 2, 2, 1, 1, 1, 2, 4, 4, 2, 1, 0, 1, 2, 2, 2, 2, 1, 1, 2, 1, 0],
+      beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4] }
+  ];
+  var mk = null;
+
+  function startMokkin() {
+    go("mokkin");
+    mk = { song: null, at: 0, playing: false, down: {} };
+    var pills = document.getElementById("mk-pills");
+    pills.innerHTML = "";
+    [null].concat(SONGS).forEach(function (s) {
+      var b = el("button", "pill" + (s ? "" : " on"));
+      b.textContent = s ? s.ico + " " + s.name : "🎵 じゆう";
+      b.addEventListener("click", function () {
+        if (mk.playing) return;
+        Array.prototype.forEach.call(pills.children, function (x) { x.classList.toggle("on", x === b); });
+        play("tap");
+        mk.song = s;
+        mk.at = 0;
+        if (s) say(s.name);
+        markSong();
+      });
+      pills.appendChild(b);
+    });
+    var box = document.getElementById("xylo");
+    box.innerHTML = "";
+    MK_NOTES.forEach(function (nt, i) {
+      var k = el("div", "mk-key");
+      k.setAttribute("data-i", i);
+      k.style.setProperty("--c", nt.c);
+      k.style.setProperty("--len", (1 - i * .055).toFixed(3)); // 高い音ほど短い板
+      k.innerHTML = '<span class="mk-star">⭐</span><span class="mk-name">' + nt.n + '</span>';
+      box.appendChild(k);
+    });
+    markSong();
+  }
+
+  // うたのときは、次にたたく板を光らせ、上に曲の音のならびを出す
+  function markSong() {
+    var want = mk.song && !mk.playing ? mk.song.notes[mk.at] : -1;
+    Array.prototype.forEach.call(document.querySelectorAll("#xylo .mk-key"), function (k, i) {
+      if (i === want && k.classList.contains("next")) {
+        // 同じ板が続くときも、星をもう一度はずませて「もう1回」とわかるようにする
+        var st = k.querySelector(".mk-star");
+        st.style.animation = "none";
+        void st.offsetWidth;
+        st.style.animation = "";
+      }
+      k.classList.toggle("next", i === want);
+    });
+    document.getElementById("song-dots").innerHTML = mk.song ? mk.song.notes.map(function (n, j) {
+      return '<span class="' + (j < mk.at ? "done" : j === mk.at && !mk.playing ? "now" : "") + '" style="--c:' + MK_NOTES[n].c + '"></span>';
+    }).join("") : "";
+  }
+
+  function flashKey(k) {
+    k.classList.remove("hit");
+    void k.offsetWidth;
+    k.classList.add("hit");
+  }
+
+  function hitKey(k) {
+    var i = +k.getAttribute("data-i");
+    mallet(MK_NOTES[i].f);
+    flashKey(k);
+    floatNote(k, MK_NOTES[i].c);
+    if (!mk.song || mk.playing || i !== mk.song.notes[mk.at]) return; // ほかの板も ふつうに鳴るだけ（まちがいにしない）
+    mk.at++;
+    if (mk.at < mk.song.notes.length) { markSong(); return; }
+    // さいごまで ひけた：曲を通して聞かせてから おしまい（もどるを押したら、とちゅうで止まる）
+    mk.playing = true;
+    markSong();
+    var keys = document.querySelectorAll("#xylo .mk-key");
+    later(function () { burst(document.getElementById("xylo"), 16); play("right"); }, 250);
+    var t = 1100;
+    mk.song.notes.forEach(function (n, j) {
+      later(function () { mallet(MK_NOTES[n].f); flashKey(keys[n]); }, t);
+      t += mk.song.beats[j] * 380;
+    });
+    later(function () { finish(1); }, t + 600);
+  }
+
+  // 板をたたくと、音符が ふわっと上がる
+  function floatNote(k, color) {
+    var r = k.getBoundingClientRect();
+    var s = document.createElement("span");
+    s.className = "fnote";
+    s.textContent = Math.random() < .5 ? "♪" : "♫";
+    s.style.color = color;
+    s.style.left = (r.left + r.width / 2) + "px";
+    s.style.top = (r.top + Math.min(r.width, r.height) * .3) + "px";
+    s.style.setProperty("--dx", Math.round(Math.random() * 40 - 20) + "px");
+    document.body.appendChild(s);
+    setTimeout(s.remove.bind(s), 950);
+  }
+
+  (function () {
+    var box = document.getElementById("xylo");
+    function keyAt(x, y) {
+      var t = document.elementFromPoint(x, y);
+      return t && t.closest ? t.closest("#xylo .mk-key") : null;
+    }
+    box.addEventListener("pointerdown", function (e) {
+      if (!mk) return;
+      e.preventDefault();
+      var k = keyAt(e.clientX, e.clientY);
+      mk.down[e.pointerId] = k;
+      if (k) hitKey(k);
+    });
+    // 指をすべらせると、通った板が次々に鳴る（いくつもの指で たたいてもよい）
+    box.addEventListener("pointermove", function (e) {
+      if (!mk || !(e.pointerId in mk.down)) return;
+      if (e.pointerType === "mouse" && !e.buttons) { delete mk.down[e.pointerId]; return; }
+      var k = keyAt(e.clientX, e.clientY);
+      if (k !== mk.down[e.pointerId]) {
+        mk.down[e.pointerId] = k;
+        if (k) hitKey(k);
+      }
+    });
+    function up(e) { if (mk) delete mk.down[e.pointerId]; }
+    box.addEventListener("pointerup", up);
+    box.addEventListener("pointercancel", up);
+  })();
+
+  /* ============ いないいないばあ（自由あそび・記録なし） ============ */
+  // どこかをタッチすると布が上がって、どうぶつが「ばあ！」と出てくる。8回でおしまい
+  var BAA_ROUND = 8;
+  var BAA_ANIMALS = ["🐶", "🐱", "🐰", "🐻", "🐼", "🐵", "🐸", "🐷", "🐯", "🦁", "🐨", "🐮", "🐤", "🐧"];
+  var CLOTHS = ["#f48fb1", "#81c784", "#64b5f6", "#ffb74d", "#ba68c8", "#4dd0e1", "#e57373"];
+  // 水玉の布を、両はしで手が持っている
+  var CLOTH_SVG = '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+    '<defs><pattern id="cloth-dots" width="16" height="16" patternUnits="userSpaceOnUse">' +
+    '<circle cx="4" cy="4" r="3.2" fill="#fff" opacity=".6"/><circle cx="12" cy="12" r="3.2" fill="#fff" opacity=".6"/></pattern></defs>' +
+    '<path d="M6 12 Q50 4 94 12 L96 86 Q74 97 50 90 Q26 97 4 86 Z" style="fill:var(--cc)"/>' +
+    '<path d="M6 12 Q50 4 94 12 L96 86 Q74 97 50 90 Q26 97 4 86 Z" fill="url(#cloth-dots)"/>' +
+    '<path d="M11 17 Q50 10 89 17 L90.5 82 Q72 91 50 85 Q28 91 9.5 82 Z" fill="none" stroke="#fff" stroke-width="2.2" stroke-dasharray="5 4" opacity=".85"/>' +
+    '<circle cx="9" cy="11" r="7.5" fill="#ffd9b8" stroke="#e8b48f" stroke-width="1.5"/>' +
+    '<circle cx="91" cy="11" r="7.5" fill="#ffd9b8" stroke="#e8b48f" stroke-width="1.5"/></svg>';
+  var baa = null;
+
+  function startBaa() {
+    go("baa");
+    baa = { n: 0, bag: shuffle(BAA_ANIMALS), colors: shuffle(CLOTHS), open: false };
+    var cloth = document.getElementById("baa-cloth");
+    cloth.innerHTML = CLOTH_SVG;
+    cloth.classList.remove("up");
+    document.getElementById("baa-animal").classList.remove("show");
+    drawDots("baa-dots", BAA_ROUND, 0);
+    coverBaa();
+  }
+  // 布でかくれているあいだに、つぎの どうぶつと 布の色にかえる
+  function coverBaa() {
+    document.getElementById("baa-animal").textContent = baa.bag[baa.n % baa.bag.length];
+    document.getElementById("baa-cloth").style.setProperty("--cc", baa.colors[baa.n % baa.colors.length]);
+    baaPrompt("いない いない…");
+    say("いない いない");
+  }
+  function baaPrompt(t) {
+    var pr = document.getElementById("baa-prompt");
+    pr.textContent = t;
+    pr.classList.remove("pop");
+    void pr.offsetWidth;
+    pr.classList.add("pop");
+  }
+  function revealBaa() {
+    if (!baa || baa.open) return;
+    baa.open = true;
+    var cloth = document.getElementById("baa-cloth"), animal = document.getElementById("baa-animal");
+    cloth.classList.add("up");
+    animal.classList.add("show");
+    baaPrompt("ばあ！");
+    play("baa");
+    say("ばあ");
+    later(function () { burst(animal, 12); }, 150);
+    baa.n++;
+    drawDots("baa-dots", BAA_ROUND, baa.n);
+    if (baa.n >= BAA_ROUND) { later(function () { finish(BAA_ROUND); }, 1900); return; }
+    // しばらく見せたら、布がもどってくる
+    later(function () {
+      cloth.classList.remove("up");
+      animal.classList.remove("show");
+      later(function () { baa.open = false; coverBaa(); }, 520);
+    }, 1900);
+  }
+  document.getElementById("baa-stage").addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+    revealBaa();
+  });
+
+  /* ============ ぬりえ（自由あそび・記録なし） ============ */
+  // 色をえらんで、ぬりたい所をタッチ。線でかこまれた所だけがぬれる（はみ出さない）。「できた」でおしまい
+  var NURIE_COLORS = COLORS.map(function (c) { return c.c; }).concat("#ffffff");
+  var INK = 'stroke="#4a3f35" stroke-linecap="round" fill="none"';
+  var NURIE = [
+    { name: "おうち", svg:
+      '<rect class="rg" x="64" y="18" width="11" height="24"/>' +
+      '<rect class="rg" x="17" y="48" width="66" height="40" rx="2"/>' +
+      '<polygon class="rg" points="8,50 50,14 92,50"/>' +
+      '<path class="rg" d="M42 88 V66 A8 8 0 0 1 58 66 V88 Z"/>' +
+      '<rect class="rg" x="23" y="57" width="13" height="13" rx="1.5"/>' +
+      '<rect class="rg" x="64" y="57" width="13" height="13" rx="1.5"/>' +
+      '<g class="dt"><circle cx="54" cy="78" r="1.4" fill="#4a3f35"/>' +
+      '<path d="M29.5 57v13M23 63.5h13M70.5 57v13M64 63.5h13" ' + INK + ' stroke-width="1.1"/></g>' },
+    { name: "さかな", svg:
+      '<polygon class="rg" points="70,50 92,32 88,50 92,68"/>' +
+      '<path class="rg" d="M34 33 Q46 16 62 32 Z"/>' +
+      '<ellipse class="rg" cx="44" cy="50" rx="32" ry="19"/>' +
+      '<path class="rg" d="M40 31.2 Q46 50 40 68.8 L50 68.7 Q56 50 50 31.3 Z"/>' +
+      '<circle class="rg" cx="80" cy="18" r="4.5"/><circle class="rg" cx="89" cy="9" r="3"/>' +
+      '<g class="dt"><circle cx="24" cy="46" r="4.4" fill="#fff" stroke="#4a3f35" stroke-width="1.2"/>' +
+      '<circle cx="23" cy="46" r="2.1" fill="#4a3f35"/><path d="M13 54 q4 3 8 1" ' + INK + ' stroke-width="1.2"/></g>' },
+    { name: "くるま", svg:
+      '<path class="rg" d="M26 56 L36 38 H64 L76 56 Z"/>' +
+      '<path class="rg" d="M39 42 H48.5 V53 H32 Z"/><path class="rg" d="M51.5 42 H61 L68 53 H51.5 Z"/>' +
+      '<rect class="rg" x="9" y="54" width="82" height="22" rx="8"/>' +
+      '<circle class="rg" cx="30" cy="77" r="10"/><circle class="rg" cx="70" cy="77" r="10"/>' +
+      '<circle class="rg" cx="30" cy="77" r="4.2"/><circle class="rg" cx="70" cy="77" r="4.2"/>' +
+      '<circle class="rg" cx="85" cy="62" r="3.2"/>' +
+      '<g class="dt"><path d="M50 58 V70" ' + INK + ' stroke-width="1.1"/><path d="M53.5 62 h5" ' + INK + ' stroke-width="1.5"/></g>' },
+    { name: "おはな", svg:
+      '<rect class="rg" x="47.5" y="50" width="5" height="44" rx="2.5"/>' +
+      '<ellipse class="rg" cx="37" cy="79" rx="11" ry="5.5" transform="rotate(-30 37 79)"/>' +
+      '<ellipse class="rg" cx="63" cy="71" rx="11" ry="5.5" transform="rotate(30 63 71)"/>' +
+      '<circle class="rg" cx="50" cy="21" r="11"/><circle class="rg" cx="63" cy="28.5" r="11"/>' +
+      '<circle class="rg" cx="63" cy="43.5" r="11"/><circle class="rg" cx="50" cy="51" r="11"/>' +
+      '<circle class="rg" cx="37" cy="43.5" r="11"/><circle class="rg" cx="37" cy="28.5" r="11"/>' +
+      '<circle class="rg" cx="50" cy="36" r="10"/>' +
+      '<g class="dt"><circle cx="46.5" cy="34" r="1.4" fill="#4a3f35"/><circle cx="53.5" cy="34" r="1.4" fill="#4a3f35"/>' +
+      '<path d="M46 39 q4 3 8 0" ' + INK + ' stroke-width="1.2"/></g>' },
+    { name: "ちょうちょ", svg:
+      '<ellipse class="rg" cx="31" cy="35" rx="20" ry="15" transform="rotate(-25 31 35)"/>' +
+      '<ellipse class="rg" cx="69" cy="35" rx="20" ry="15" transform="rotate(25 69 35)"/>' +
+      '<ellipse class="rg" cx="35" cy="63" rx="14" ry="11" transform="rotate(25 35 63)"/>' +
+      '<ellipse class="rg" cx="65" cy="63" rx="14" ry="11" transform="rotate(-25 65 63)"/>' +
+      '<circle class="rg" cx="29" cy="34" r="6"/><circle class="rg" cx="71" cy="34" r="6"/>' +
+      '<circle class="rg" cx="36" cy="64" r="4"/><circle class="rg" cx="64" cy="64" r="4"/>' +
+      '<ellipse class="rg" cx="50" cy="52" rx="5.5" ry="24"/>' +
+      '<g class="dt"><path d="M48 29 Q42 14 36 12 M52 29 Q58 14 64 12" ' + INK + ' stroke-width="1.4"/>' +
+      '<circle cx="36" cy="12" r="2" fill="#4a3f35"/><circle cx="64" cy="12" r="2" fill="#4a3f35"/></g>' },
+    { name: "ロケット", svg:
+      '<path class="rg" d="M36 58 L22 80 L37 74 Z"/><path class="rg" d="M64 58 L78 80 L63 74 Z"/>' +
+      '<path class="rg" d="M41 74 H59 L55 86 L50 96 L45 86 Z"/>' +
+      '<path class="rg" d="M50 6 C64 18 67 40 64 74 H36 C33 40 36 18 50 6 Z"/>' +
+      '<path class="rg" d="M50 6 C55.6 10.8 59.4 17.2 61.8 25.3 H38.2 C40.6 17.2 44.4 10.8 50 6 Z"/>' +
+      '<path class="rg" d="M35.1 56 H64.9 L64.8 63 H35.2 Z"/>' +
+      '<circle class="rg" cx="50" cy="40" r="8"/>' },
+    { name: "ねこ", svg:
+      '<polygon class="rg" points="18,40 24,8 46,26"/><polygon class="rg" points="82,40 76,8 54,26"/>' +
+      '<polygon class="rg" points="25,32 27,17 38,26"/><polygon class="rg" points="75,32 73,17 62,26"/>' +
+      '<ellipse class="rg" cx="50" cy="54" rx="36" ry="31"/>' +
+      '<circle class="rg" cx="30" cy="64" r="6"/><circle class="rg" cx="70" cy="64" r="6"/>' +
+      '<path class="rg" d="M45 58 H55 L50 64 Z"/>' +
+      '<g class="dt"><ellipse cx="37" cy="50" rx="3.4" ry="5" fill="#4a3f35"/><ellipse cx="63" cy="50" rx="3.4" ry="5" fill="#4a3f35"/>' +
+      '<circle cx="38.2" cy="48.2" r="1.2" fill="#fff"/><circle cx="64.2" cy="48.2" r="1.2" fill="#fff"/>' +
+      '<path d="M50 64 V68 M50 68 q-5 5 -9 1 M50 68 q5 5 9 1" ' + INK + ' stroke-width="1.3"/>' +
+      '<path d="M8 58 L24 61 M8 66 L24 65 M92 58 L76 61 M92 66 L76 65" ' + INK + ' stroke-width="1.2"/></g>' },
+    { name: "ケーキ", svg:
+      '<ellipse class="rg" cx="50" cy="87" rx="40" ry="7"/>' +
+      '<rect class="rg" x="20" y="52" width="60" height="33" rx="3"/>' +
+      '<path class="rg" d="M20 56 V52 Q20 48 24 48 H76 Q80 48 80 52 V56 Q76 63 72 56 Q68 63 64 56 Q60 63 56 56 Q52 63 48 56 Q44 63 40 56 Q36 63 32 56 Q28 63 24 56 Q22 61 20 56 Z"/>' +
+      '<rect class="rg" x="46.5" y="27" width="7" height="21" rx="2"/>' +
+      '<path class="rg" d="M50 11 C55 17 55 24 50 25 C45 24 45 17 50 11 Z"/>' +
+      '<path class="rg" d="M25 41 C25 37 37 37 37 41 C37 45 33 51 31 51 C29 51 25 45 25 41 Z"/>' +
+      '<path class="rg" d="M63 41 C63 37 75 37 75 41 C75 45 71 51 69 51 C67 51 63 45 63 41 Z"/>' +
+      '<path class="rg" d="M26 39 L31 34 L36 39 Z"/><path class="rg" d="M64 39 L69 34 L74 39 Z"/>' }
+  ];
+  var nr = null;
+
+  function startNurie() {
+    go("nurie");
+    nr = { order: shuffle(NURIE.map(function (_, i) { return i; })), at: 0, color: NURIE_COLORS[0], filled: 0 };
+    var tools = document.getElementById("nurie-tools");
+    tools.innerHTML = "";
+    NURIE_COLORS.forEach(function (c, i) {
+      var b = el("button", "pen" + (i === 0 ? " on" : "") + (c === "#ffffff" ? " white" : ""));
+      b.style.background = c;
+      b.setAttribute("aria-label", COLORS[i] ? COLORS[i].name : "しろ");
+      b.addEventListener("click", function () {
+        nr.color = c;
+        Array.prototype.forEach.call(tools.querySelectorAll(".pen"), function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        play("tap");
+      });
+      tools.appendChild(b);
+    });
+    var next = el("button", "mini ghost");
+    next.textContent = "つぎの え";
+    next.addEventListener("click", function () { play("tap"); nr.at++; showNurie(); });
+    tools.appendChild(next);
+    var done = el("button", "mini");
+    done.textContent = "できた";
+    // いくつか ぬってから「できた」を押したときだけ、シールがもらえる
+    done.addEventListener("click", function () { play("tap"); finish(0, nr.filled < 3); });
+    tools.appendChild(done);
+    showNurie();
+  }
+  function showNurie() {
+    var p = NURIE[nr.order[nr.at % nr.order.length]];
+    document.getElementById("nurie-area").innerHTML =
+      '<svg class="nurie-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-label="' + p.name + '">' + p.svg + '</svg>';
+  }
+  document.getElementById("nurie-area").addEventListener("pointerdown", function (e) {
+    var r = e.target.closest && e.target.closest(".rg");
+    if (!nr || !r) return;
+    e.preventDefault();
+    r.style.fill = nr.color;
+    nr.filled++;
+    play("place");
+    burst(r, 6, [nr.color === "#ffffff" ? "#e9dfcf" : nr.color, "#ffd766"]);
+  });
+
+  /* ============ てんつなぎ（記録なし） ============ */
+  // 1から じゅんばんに点をつなぐと、絵が出てくる。点はタッチしても、指をすべらせても つながる。
+  // ちがう点を押しても何も起きない（その点が小さくゆれて、次の点がそっと光る）。1回3まいで、点が増えていく
+  var TS_PICS = [
+    { name: "おうち", lv: 0, fill: "#ffcc80", pts: [[22, 86], [22, 46], [50, 16], [78, 46], [78, 86]],
+      art: '<rect x="42" y="64" width="16" height="22" rx="2" fill="#a1887f"/>' +
+           '<rect x="28" y="54" width="11" height="11" rx="2" fill="#bbdefb"/><rect x="61" y="54" width="11" height="11" rx="2" fill="#bbdefb"/>' },
+    { name: "テント", lv: 0, fill: "#81c784", pts: [[50, 14], [86, 82], [60, 82], [50, 62], [40, 82], [14, 82]],
+      art: '<polygon points="50,62 60,82 40,82" fill="#5d4037" opacity=".55"/><circle cx="50" cy="11" r="3" fill="#e53935"/>' },
+    { name: "ヨット", lv: 1, fill: "#90caf9", pts: [[50, 12], [78, 58], [88, 64], [76, 82], [24, 82], [12, 64], [50, 64]],
+      art: '<polygon points="50,14 76,58 50,58" fill="#fff"/><polygon points="12,64 88,64 76,82 24,82" fill="#a1887f"/>' +
+           '<path d="M50 12 V64" stroke="#6d4c41" stroke-width="1.6"/>' },
+    { name: "さかな", lv: 1, fill: "#4fc3f7", pts: [[14, 50], [34, 31], [58, 34], [74, 48], [90, 32], [90, 68], [58, 66], [34, 69]],
+      art: '<circle cx="27" cy="46" r="3.6" fill="#fff"/><circle cx="26.4" cy="46" r="1.9" fill="#37474f"/>' +
+           '<path d="M44 38 Q49 50 44 63" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity=".7"/>' },
+    { name: "ハート", lv: 1, fill: "#f48fb1", pts: [[50, 30], [64, 18], [82, 22], [88, 40], [50, 84], [12, 40], [18, 22], [36, 18]],
+      art: '<ellipse cx="29" cy="32" rx="5" ry="8" fill="#fff" opacity=".5" transform="rotate(30 29 32)"/>' },
+    { name: "ロケット", lv: 2, fill: "#ef5350", pts: [[50, 8], [62, 24], [64, 56], [76, 76], [62, 68], [38, 68], [24, 76], [36, 56], [38, 24]],
+      art: '<circle cx="50" cy="38" r="7" fill="#81d4fa" stroke="#fff" stroke-width="2"/>' +
+           '<path d="M42 68 H58 L50 86 Z" fill="#ffb300"/>' },
+    { name: "ほし", lv: 2, fill: "#ffd54f",
+      pts: [[50, 13], [60, 39.2], [88, 40.6], [66.2, 58.3], [73.5, 85.4], [50, 70], [26.5, 85.4], [33.8, 58.3], [12, 40.6], [40, 39.2]],
+      art: '<circle cx="44" cy="52" r="2.3" fill="#5d4037"/><circle cx="56" cy="52" r="2.3" fill="#5d4037"/>' +
+           '<path d="M45 59 Q50 63 55 59" stroke="#5d4037" stroke-width="1.6" fill="none" stroke-linecap="round"/>' }
+  ];
+  var ts = null;
+
+  function startTentsu() {
+    go("tentsu");
+    var lv = easy ? [0, 0, 1] : [0, 1, 2];
+    var used = [];
+    ts = { i: 0, pics: lv.map(function (l) {
+      var p = pick(TS_PICS.filter(function (x) { return x.lv === l && used.indexOf(x) === -1; }));
+      used.push(p);
+      return p;
+    }) };
+    nextTentsu();
+  }
+
+  // 点 i の数字を置く向き（となりの2つの辺から、絵の外がわへ はなれる向き）
+  function tsOutward(pts, i) {
+    var n = pts.length, s = 0;
+    for (var k = 0; k < n; k++) s += pts[k][0] * pts[(k + 1) % n][1] - pts[(k + 1) % n][0] * pts[k][1];
+    var sign = s > 0 ? 1 : -1;
+    function nrm(p, q) {
+      var dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy) || 1;
+      return [sign * dy / L, -sign * dx / L];
+    }
+    var a = nrm(pts[(i - 1 + n) % n], pts[i]), b = nrm(pts[i], pts[(i + 1) % n]);
+    var v = [a[0] + b[0], a[1] + b[1]], L = Math.hypot(v[0], v[1]) || 1;
+    return [v[0] / L, v[1] / L];
+  }
+
+  function nextTentsu() {
+    if (ts.i >= ts.pics.length) { finish(ts.pics.length); return; }
+    drawDots("ts-dots", ts.pics.length, ts.i);
+    var p = ts.pics[ts.i], pts = p.pts;
+    ts.at = 0;
+    ts.lock = false;
+    var dots = pts.map(function (q, i) {
+      return '<circle class="ts-dot' + (i === 0 ? " start" : "") + '" cx="' + q[0] + '" cy="' + q[1] + '" r="3"/>';
+    }).join("");
+    var nums = pts.map(function (q, i) {
+      var o = tsOutward(pts, i);
+      var x = Math.max(5, Math.min(95, q[0] + o[0] * 7)), y = Math.max(5, Math.min(96, q[1] + o[1] * 7));
+      return '<text class="ts-num" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '">' + (i + 1) + '</text>';
+    }).join("");
+    var area = document.getElementById("ts-area");
+    area.innerHTML = '<svg class="ts-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="ts-art"><polygon points="' + pts.join(" ") + '" fill="' + p.fill + '"/>' + p.art + '</g>' +
+      '<g class="ts-lines"></g>' + dots + nums + '</svg>';
+    ts.svg = area.querySelector("svg");
+    ts.svg.addEventListener("pointerdown", tsMove);
+    ts.svg.addEventListener("pointermove", tsMove);
+    document.getElementById("ts-body").scrollTop = 0;
+    say("1から つないで");
+  }
+
+  function tsMove(e) {
+    if (!ts || ts.lock) return;
+    if (e.type === "pointermove" && e.pointerType === "mouse" && !e.buttons) return;
+    e.preventDefault();
+    var m = ts.svg.getScreenCTM();
+    if (!m) return;
+    var pt = ts.svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    var p = pt.matrixTransform(m.inverse());
+    var pts = ts.pics[ts.i].pts, next = pts[ts.at];
+    if (Math.hypot(p.x - next[0], p.y - next[1]) < 9) { tsConnect(); return; }
+    if (e.type !== "pointerdown") return;
+    // ちがう点をタッチしたとき：その点が小さくゆれて、つぎの点がそっと光る（×は出さない）
+    var dotEls = ts.svg.querySelectorAll(".ts-dot");
+    for (var i = ts.at + 1; i < pts.length; i++) {
+      if (Math.hypot(p.x - pts[i][0], p.y - pts[i][1]) > 7) continue;
+      dotEls[i].classList.remove("nope");
+      void dotEls[i].getBoundingClientRect();
+      dotEls[i].classList.add("nope");
+      dotEls[ts.at].classList.add("hint");
+      return;
+    }
+  }
+
+  function tsConnect() {
+    var pic = ts.pics[ts.i], pts = pic.pts, i = ts.at;
+    var dot = ts.svg.querySelectorAll(".ts-dot")[i];
+    dot.classList.remove("start", "hint", "nope");
+    dot.classList.add("on");
+    ts.svg.querySelectorAll(".ts-num")[i].classList.add("on");
+    if (i > 0) tsLine(pts[i - 1], pts[i]);
+    note(i);
+    say(String(i + 1)); // 数字を声で読む
+    ts.at++;
+    if (ts.at < pts.length) return;
+    // さいごの点から 1 に もどって、絵ができあがる
+    ts.lock = true;
+    later(function () { tsLine(pts[pts.length - 1], pts[0]); }, 250);
+    later(function () {
+      ts.svg.querySelector(".ts-art").classList.add("on");
+      burst(ts.svg, 16);
+      play("right");
+      say(pic.name);
+    }, 650);
+    later(function () { ts.i++; nextTentsu(); }, 2300);
+  }
+
+  function tsLine(a, b) {
+    var ln = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    var L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    ln.setAttribute("class", "ts-line");
+    ln.setAttribute("x1", a[0]);
+    ln.setAttribute("y1", a[1]);
+    ln.setAttribute("x2", b[0]);
+    ln.setAttribute("y2", b[1]);
+    ln.style.strokeDasharray = L + " " + (L + 10);
+    ln.style.strokeDashoffset = L;
+    ts.svg.querySelector(".ts-lines").appendChild(ln);
+    ln.getBoundingClientRect(); // いったん描いてから、線がのびるようにする
+    ln.style.strokeDashoffset = 0;
+  }
+
+  /* ============ めいろ（記録なし） ============ */
+  // ゆびで どうぶつを うごかして、ゴールの食べものまで つれていく。1回3つで、だんだん広くなる。
+  // 壁のむこうへは行けないだけ（時間制限なし）。いま いる所までの道すじに線が残る
+  var MAZE_PAIRS = [
+    ["🐭", "🧀", "チーズ"], ["🐰", "🥕", "にんじん"], ["🐶", "🦴", "ほね"], ["🐵", "🍌", "バナナ"],
+    ["🐻", "🍯", "はちみつ"], ["🐱", "🐟", "さかな"], ["🐿️", "🌰", "どんぐり"]
+  ];
+  var MZ = 10; // 1マスの大きさ（SVG の目盛り）
+  var mz = null;
+
+  function startMaze() {
+    go("maze");
+    mz = { i: 0, sizes: easy ? [[3, 2], [3, 3], [4, 3]] : [[4, 3], [5, 4], [6, 5]], pairs: shuffle(MAZE_PAIRS) };
+    nextMaze();
+  }
+
+  // 1本道でつながった めいろを作る（どのマスからも、ゴールへの道はひとつだけ）。walls[マス] = [上, 右, 下, 左] の壁
+  function makeMaze(W, H) {
+    var walls = [], seen = [], stack = [0];
+    for (var c = 0; c < W * H; c++) { walls.push([true, true, true, true]); seen.push(false); }
+    seen[0] = true;
+    while (stack.length) {
+      var cur = stack[stack.length - 1], x = cur % W, y = Math.floor(cur / W), nb = [];
+      if (y > 0 && !seen[cur - W]) nb.push([cur - W, 0, 2]);
+      if (x < W - 1 && !seen[cur + 1]) nb.push([cur + 1, 1, 3]);
+      if (y < H - 1 && !seen[cur + W]) nb.push([cur + W, 2, 0]);
+      if (x > 0 && !seen[cur - 1]) nb.push([cur - 1, 3, 1]);
+      if (!nb.length) { stack.pop(); continue; }
+      var n = pick(nb);
+      walls[cur][n[1]] = false;
+      walls[n[0]][n[2]] = false;
+      seen[n[0]] = true;
+      stack.push(n[0]);
+    }
+    return walls;
+  }
+
+  function nextMaze() {
+    if (mz.i >= mz.sizes.length) { finish(mz.sizes.length); return; }
+    drawDots("mz-dots", mz.sizes.length, mz.i);
+    var area = document.getElementById("mz-area");
+    var W = mz.sizes[mz.i][0], H = mz.sizes[mz.i][1];
+    var r = area.getBoundingClientRect();
+    if (r.height > r.width * 1.05) { var t = W; W = H; H = t; } // たて長の画面では、めいろも たて長に
+    var pair = mz.pairs[mz.i % mz.pairs.length];
+    mz.W = W;
+    mz.H = H;
+    mz.walls = makeMaze(W, H);
+    mz.pos = 0;           // 指で進めた先（いちばん新しい場所）
+    mz.goal = W * H - 1;
+    mz.path = [0];        // いま いる所までの道すじ
+    mz.queue = [];        // これから1マスずつ動く道
+    mz.moving = false;
+    mz.done = false;
+    var pr = document.getElementById("mz-prompt");
+    pr.textContent = pair[2] + "まで いこう";
+    say(pr.textContent);
+    var d = "";
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+      var w = mz.walls[y * W + x];
+      if (w[0]) d += "M" + x * MZ + " " + y * MZ + "h" + MZ;
+      if (w[3]) d += "M" + x * MZ + " " + y * MZ + "v" + MZ;
+      if (y === H - 1 && w[2]) d += "M" + x * MZ + " " + (y + 1) * MZ + "h" + MZ;
+      if (x === W - 1 && w[1]) d += "M" + (x + 1) * MZ + " " + y * MZ + "v" + MZ;
+    }
+    var P = 3;
+    area.innerHTML = '<svg class="mz-svg" viewBox="' + (-P) + " " + (-P) + " " + (W * MZ + 2 * P) + " " + (H * MZ + 2 * P) +
+      '" preserveAspectRatio="xMidYMid meet">' +
+      '<rect class="mz-floor" x="0" y="0" width="' + W * MZ + '" height="' + H * MZ + '"/>' +
+      '<rect class="mz-goalcell" x="' + (W - 1) * MZ + '" y="' + (H - 1) * MZ + '" width="' + MZ + '" height="' + MZ + '"/>' +
+      '<polyline class="mz-trail" points="' + MZ / 2 + "," + MZ / 2 + '"/>' +
+      '<path class="mz-wall" d="' + d + '"/>' +
+      '<text class="mz-emo mz-goal" x="' + (W - .5) * MZ + '" y="' + (H - .5) * MZ + '">' + pair[1] + '</text>' +
+      '<g class="mz-hero" style="transform:translate(' + MZ / 2 + 'px,' + MZ / 2 + 'px)"><text class="mz-emo" x="0" y="0">' + pair[0] + '</text></g>' +
+      '</svg>';
+    mz.svg = area.querySelector("svg");
+    mz.svg.addEventListener("pointerdown", mzPointer);
+    mz.svg.addEventListener("pointermove", mzPointer);
+    document.getElementById("mz-body").scrollTop = 0;
+  }
+
+  function mzOpen(c) {
+    var w = mz.walls[c], out = [];
+    if (!w[0]) out.push(c - mz.W);
+    if (!w[1]) out.push(c + 1);
+    if (!w[2]) out.push(c + mz.W);
+    if (!w[3]) out.push(c - 1);
+    return out;
+  }
+  // 壁を通らずに、maxLen マス以内で行ける道（行けなければ null）
+  function mzRoute(from, to, maxLen) {
+    var prev = {}, dist = {}, q = [from];
+    prev[from] = -1;
+    dist[from] = 0;
+    while (q.length) {
+      var c = q.shift();
+      if (c === to) break;
+      if (dist[c] >= maxLen) continue;
+      mzOpen(c).forEach(function (n) {
+        if (!(n in prev)) { prev[n] = c; dist[n] = dist[c] + 1; q.push(n); }
+      });
+    }
+    if (!(to in prev)) return null;
+    var r = [];
+    for (var k = to; k !== from; k = prev[k]) r.unshift(k);
+    return r;
+  }
+
+  // 指のあるマスへ、壁を通らずに近い道で行ければ進む（どうぶつを すべらせても、行きたいマスをタッチしてもよい）
+  function mzPointer(e) {
+    if (!mz || mz.done) return;
+    if (e.type === "pointermove" && e.pointerType === "mouse" && !e.buttons) return;
+    e.preventDefault();
+    var m = mz.svg.getScreenCTM();
+    if (!m) return;
+    var pt = mz.svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    var p = pt.matrixTransform(m.inverse());
+    var cx = Math.floor(p.x / MZ), cy = Math.floor(p.y / MZ);
+    if (cx < 0 || cy < 0 || cx >= mz.W || cy >= mz.H) return;
+    var route = mzRoute(mz.pos, cy * mz.W + cx, 4);
+    if (!route || !route.length) return;
+    mz.queue = mz.queue.concat(route);
+    mz.pos = route[route.length - 1];
+    if (mz.pos === mz.goal) mz.done = true;
+    if (!mz.moving) mzStep();
+  }
+
+  function mzStep() {
+    if (!mz.queue.length) {
+      mz.moving = false;
+      if (mz.done) mazeGoal();
+      return;
+    }
+    mz.moving = true;
+    var c = mz.queue.shift();
+    // 来た道をもどったら、線ももどす
+    if (mz.path.length > 1 && mz.path[mz.path.length - 2] === c) mz.path.pop(); else mz.path.push(c);
+    var ctr = function (k) { return [(k % mz.W + .5) * MZ, (Math.floor(k / mz.W) + .5) * MZ]; };
+    var xy = ctr(c);
+    mz.svg.querySelector(".mz-hero").style.transform = "translate(" + xy[0] + "px," + xy[1] + "px)";
+    mz.svg.querySelector(".mz-trail").setAttribute("points", mz.path.map(function (k) { return ctr(k).join(","); }).join(" "));
+    play("step");
+    later(mzStep, 95);
+  }
+
+  function mazeGoal() {
+    mz.svg.querySelector(".mz-hero").classList.add("yay");
+    burst(mz.svg.querySelector(".mz-goal"), 14);
+    play("right");
+    say("ゴール");
+    later(function () { mz.i++; nextMaze(); }, 1800);
+  }
+
+  /* ============ ことばづくり ============ */
+  // 絵を見て、文字カードを ことばの順にタッチする。わくには うすいお手本の字がある。
+  // ちがうカードは小さくゆれるだけ（×なし）。1回まちがえると、正しいカードに枠が出る。
+  // 字は、あいうえお なぞり と同じ46字だけ（「が」や小さい「っ」のある ことばは使わない）
+  var KZ_WORDS = {
+    2: [["いぬ", "🐕"], ["ねこ", "🐈"], ["くま", "🐻"], ["さる", "🐒"], ["うし", "🐄"], ["うま", "🐴"], ["かめ", "🐢"],
+        ["たこ", "🐙"], ["かに", "🦀"], ["いか", "🦑"], ["あり", "🐜"], ["りす", "🐿️"], ["とり", "🐦"], ["しか", "🦌"],
+        ["はな", "🌷"], ["ほし", "⭐"], ["つき", "🌙"], ["くも", "☁️"], ["もも", "🍑"], ["なし", "🍐"], ["なす", "🍆"],
+        ["いえ", "🏠"], ["ふね", "🚢"], ["くつ", "👟"], ["かさ", "☂️"], ["すし", "🍣"]],
+    3: [["さかな", "🐟"], ["くるま", "🚗"], ["みかん", "🍊"], ["すいか", "🍉"], ["めがね", "👓"], ["きつね", "🦊"],
+        ["とけい", "⏰"], ["たいこ", "🥁"], ["さくら", "🌸"], ["きのこ", "🍄"], ["あひる", "🦆"], ["ひよこ", "🐤"],
+        ["いるか", "🐬"], ["かえる", "🐸"], ["はさみ", "✂️"], ["えほん", "📖"]],
+    4: [["ひこうき", "✈️"], ["にわとり", "🐓"], ["ふうせん", "🎈"], ["たいよう", "☀️"], ["ひまわり", "🌻"], ["くつした", "🧦"]]
+  };
+  var KANA46 = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
+  var kz = null, lastKz = null;
+
+  function startWord() {
+    go("word");
+    var G = GAMES.kotobazukuri;
+    kz = { i: 0, sizes: (easy && G.easySizes) || G.sizes, used: [] };
+    nextWord();
+  }
+
+  function nextWord() {
+    if (kz.i >= kz.sizes.length) { finish(kz.sizes.length); return; }
+    drawDots("kz-dots", kz.sizes.length, kz.i);
+    var list = KZ_WORDS[kz.sizes[kz.i]].filter(function (w) { return kz.used.indexOf(w[0]) === -1 && w[0] !== lastKz; });
+    var w = pick(list);
+    kz.used.push(w[0]);
+    lastKz = w[0];
+    kz.word = w[0];
+    kz.at = 0;
+    kz.mistakes = 0;
+    kz.lock = false;
+    var letters = w[0].split("");
+    var tiles = letters.slice();
+    // 4さい〜 のときは、ことばに無い字のカードを1まい まぜる
+    if (!easy) tiles.push(pick(KANA46.split("").filter(function (c) { return letters.indexOf(c) === -1; })));
+    var pic = document.getElementById("kz-pic");
+    pic.textContent = w[1];
+    pic.classList.remove("yay");
+    document.getElementById("kz-slots").innerHTML = letters.map(function (c) {
+      return '<div class="kz-slot"><span class="ghost-ch">' + c + '</span></div>';
+    }).join("");
+    var box = document.getElementById("kz-tiles");
+    box.innerHTML = "";
+    mixed(tiles).forEach(function (c) {
+      var b = el("button", "kz-tile");
+      b.textContent = c;
+      b.setAttribute("data-ch", c);
+      b.addEventListener("click", function () { kzTap(b); });
+      box.appendChild(b);
+    });
+    document.getElementById("kz-body").scrollTop = 0;
+    say(w[0]);
+  }
+
+  function kzTap(b) {
+    if (!kz || kz.lock || b.classList.contains("placed")) return;
+    var want = kz.word.charAt(kz.at);
+    if (b.getAttribute("data-ch") !== want) {
+      kz.mistakes++;
+      play("soft");
+      b.classList.remove("shake");
+      void b.offsetWidth;
+      b.classList.add("shake");
+      var right = document.querySelector('#kz-tiles .kz-tile[data-ch="' + want + '"]');
+      if (right) right.classList.add("hint");
+      return;
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("#kz-tiles .hint"), function (x) { x.classList.remove("hint"); });
+    b.classList.remove("shake");
+    b.classList.add("placed");
+    // 抜けた所に同じ大きさの すきまを残して、ほかのカードが動かないようにする
+    var gap = el("span", "kz-tile");
+    gap.style.visibility = "hidden";
+    b.parentNode.insertBefore(gap, b);
+    flipInto(b, document.querySelectorAll("#kz-slots .kz-slot")[kz.at]);
+    b.classList.add("snap");
+    play("place");
+    say(want);
+    kz.at++;
+    if (kz.at < kz.word.length) return;
+    kz.lock = true;
+    record("kotobazukuri", kz.mistakes === 0);
+    later(function () {
+      var pic = document.getElementById("kz-pic");
+      pic.classList.add("yay");
+      burst(pic, 14);
+      play("right");
+      say(kz.word);
+    }, 450);
+    later(function () { kz.i++; nextWord(); }, 2200);
+  }
+
+  /* ============ シール ============ */
+  // あそびを最後までやると1まいもらえる。ホームの「シール」で、ページのすきな所にはれる
+  var STICKER_POOL = ["🐶", "🐱", "🐰", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐤", "🦄",
+    "🐙", "🦀", "🐠", "🐳", "🦋", "🐞", "🐝", "🌷", "🌻", "🌈", "⭐", "🌙", "☀️", "🍎", "🍓", "🍒", "🍉", "🍩",
+    "🍭", "🧁", "🍦", "🚗", "🚃", "🚀", "✈️", "🚒", "🎈", "🎀", "💎", "👑", "❤️", "🍀"];
+
+  // まだ持っていない絵から出す（ぜんぶ持っていたら、どれでも）
+  function giveSticker() {
+    var have = stickers.map(function (s) { return s.e; });
+    var fresh = STICKER_POOL.filter(function (e) { return have.indexOf(e) === -1; });
+    var s = { e: pick(fresh.length ? fresh : STICKER_POOL), on: false, x: 0, y: 0, r: Math.round(Math.random() * 24 - 12) };
+    stickers.push(s);
+    if (stickers.length > 300) stickers = stickers.slice(-300);
+    save(KEY_STICKERS, stickers);
+    return s;
+  }
+
+  function renderStickers() {
+    var page = document.getElementById("stk-page"), tray = document.getElementById("stk-tray");
+    page.innerHTML = "";
+    tray.innerHTML = "";
+    stickers.forEach(function (s, i) {
+      var d = el("div", "stk");
+      d.textContent = s.e;
+      d.setAttribute("data-i", i);
+      d.style.setProperty("--r", s.r + "deg");
+      if (s.on) {
+        d.style.left = (s.x * 100).toFixed(2) + "%";
+        d.style.top = (s.y * 100).toFixed(2) + "%";
+        d.addEventListener("pointerdown", stkDown);
+        d.addEventListener("pointermove", stkMove);
+        d.addEventListener("pointerup", stkUp);
+        d.addEventListener("pointercancel", stkUp);
+        page.appendChild(d);
+      } else {
+        d.addEventListener("click", function () { stickOn(i); });
+        tray.appendChild(d);
+      }
+    });
+    if (!stickers.length) tray.innerHTML = '<div class="empty">あそびを さいごまで やると、シールが もらえるよ</div>';
+    else if (!tray.children.length) tray.innerHTML = '<div class="empty">ぜんぶ はったよ</div>';
+    document.getElementById("stk-count").textContent = stickers.length ? "シール " + stickers.length + "まい" : "";
+  }
+
+  // 下のシールをタッチすると、ページの あいている所に はる
+  function stickOn(i) {
+    var page = document.getElementById("stk-page");
+    var W = page.clientWidth, H = page.clientHeight;
+    var best = [.5, .5], bestGap = -1;
+    for (var t = 0; t < 40; t++) {
+      var x = .1 + Math.random() * .8, y = .14 + Math.random() * .74, gap = Infinity;
+      stickers.forEach(function (o) { if (o.on) gap = Math.min(gap, Math.hypot((o.x - x) * W, (o.y - y) * H)); });
+      if (gap > bestGap) { bestGap = gap; best = [x, y]; }
+    }
+    stickers[i].on = true;
+    stickers[i].x = best[0];
+    stickers[i].y = best[1];
+    save(KEY_STICKERS, stickers);
+    play("peta");
+    renderStickers();
+    var d = document.querySelector('#stk-page .stk[data-i="' + i + '"]');
+    if (d) d.classList.add("pop");
+  }
+
+  // ページのシールは、指で うごかせる。下の たなへ もどすと、はがれる
+  var sd = null;
+  function stkDown(e) {
+    e.preventDefault();
+    var d = e.currentTarget;
+    sd = { d: d, i: +d.getAttribute("data-i"), id: e.pointerId, x0: e.clientX, y0: e.clientY, moved: false };
+    try { d.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  function stkMove(e) {
+    if (!sd || e.pointerId !== sd.id) return;
+    var dx = e.clientX - sd.x0, dy = e.clientY - sd.y0;
+    if (!sd.moved && Math.abs(dx) + Math.abs(dy) < 8) return;
+    sd.moved = true;
+    sd.d.classList.add("lift");
+    sd.d.style.translate = dx + "px " + dy + "px";
+  }
+  function stkUp(e) {
+    if (!sd || e.pointerId !== sd.id) return;
+    var s = sd;
+    sd = null;
+    if (!s.moved || e.type === "pointercancel") {
+      s.d.style.translate = "";
+      s.d.classList.remove("lift", "pop");
+      void s.d.offsetWidth;
+      s.d.classList.add("pop"); // タッチすると、ぷるんとする
+      if (!s.moved) play("peta");
+      return;
+    }
+    var st = stickers[s.i];
+    var page = document.getElementById("stk-page").getBoundingClientRect();
+    var tray = document.getElementById("stk-tray").getBoundingClientRect();
+    if (e.clientY > tray.top && e.clientY < tray.bottom + 40) {
+      st.on = false;
+    } else {
+      st.x = Math.max(.04, Math.min(.96, st.x + (e.clientX - s.x0) / page.width));
+      st.y = Math.max(.05, Math.min(.95, st.y + (e.clientY - s.y0) / page.height));
+    }
+    save(KEY_STICKERS, stickers);
+    play("peta");
+    renderStickers();
+  }
 
   /* ============ スケジュール ============ */
   function renderSched(justId) { // justId: いま押した項目（そこだけ はずませる）
@@ -2431,6 +3632,25 @@
             "iPad で鳴らないときは、音量と、本体の消音（サイレント）を確かめてください。</p>";
     html += "</div>";
 
+    /* --- よみあげ --- */
+    html += "<h2>よみあげ</h2><div class='panel'>";
+    html += "<label class='edit-row vis-row' style='border-bottom:none'><input type='checkbox' id='voice'" +
+            (voiceOn ? " checked" : "") + "><span class='nm'>お題を声で読む</span></label>";
+    html += "<p class='note' style='margin-top:0'>「あか さがして」などのお題を、端末の日本語の声で読みます。白いお題のラベルをタッチすると、もう一度読みます。" +
+            "てんつなぎでは数字を、ことばづくりでは文字とことばを読みます。<br>" +
+            (synth ? "声の種類は iPad の「設定 → アクセシビリティ → 読み上げコンテンツ → 声」で変えられます。"
+                   : "この端末では 読み上げが使えません。") + "</p>";
+    html += "</div>";
+
+    /* --- シール --- */
+    var placed = stickers.filter(function (s) { return s.on; }).length;
+    html += "<h2>シール</h2><div class='panel'>";
+    html += "<p style='margin:0'>もらったシール：" + stickers.length + " まい（ページに はったもの " + placed + " まい）</p>";
+    html += "<button class='mini warn' id='clear-stk' style='margin-top:10px'>シールを ぜんぶ消す</button>";
+    html += "<p class='note'>あそびを最後までやると1まいもらえます（おえかき・ぬりえは、かいてから「できた」を押したとき）。" +
+            "まだ持っていない絵から出ます。ホームの「シール」で、ページにはったり、うごかしたりできます。</p>";
+    html += "</div>";
+
     /* --- あそぶ子に合わせる --- */
     html += "<h2>あそぶ子に合わせる</h2><div class='panel'>";
     html += "<div class='row'><button class='mini" + (easy ? "" : " ghost") + "' data-preset='young'>2〜3さい</button>" +
@@ -2484,6 +3704,15 @@
             "指で動かすほか、ピースをタップ→置く場所をタップ でも置ける<br>" +
             "・同じ答えは続けて出さない（2通りしかない課題は3回続けない）。正解の場所も3回続けて同じにしない<br>" +
             "・しゃぼんだま・ふうせんは記録なしの自由あそび。逃げたり消えたりせず、8こ割ったらおしまい<br>" +
+            "・もっきん：たたくと音が鳴る（指をすべらせても鳴る）。「うた」を選ぶと次にたたく板が光る。ちがう板も鳴るだけで、まちがいにしない（記録なし）<br>" +
+            "・いないいない ばあ：タッチすると布が上がって、どうぶつが出てくる。8回でおしまい（記録なし）<br>" +
+            "・ぬりえ：色を選んで、ぬりたい所をタッチ。線の中だけがぬれて、はみ出さない（記録なし）<br>" +
+            "・てんつなぎ：1から順に点をつなぐと絵が出る。点は 5〜6 → 7〜8 → 9〜10 と増える。ちがう点を押すと、次の点がそっと光る（記録なし）<br>" +
+            "・めいろ：ゆびで どうぶつを動かしてゴールへ。壁のむこうへは行けないだけで、時間制限なし。3→4→5だん と広くなる（記録なし）<br>" +
+            "・ことばづくり：絵を見て、文字カードをことばの順にタッチ。わくに うすいお手本の字がある。2→3→4文字。" +
+            "ちがうカードは ゆれるだけで、1回まちがえると正しいカードに枠が出る。4さい〜 のときは、ことばに無い字のカードが1まい まざる<br>" +
+            "・シール：あそびを最後までやると1まいもらえる。ホームの「シール」で、ページにはれる<br>" +
+            "・よみあげ：お題を端末の声で読む。お題のラベルをタッチすると もう一度読む<br>" +
             "・iPad の「アクセスガイド」（設定→アクセシビリティ）を使うとアプリから出られなくできる<br>" +
             "・保護者メニューは右上を3秒長押し" +
             "</p></div>";
@@ -2522,6 +3751,19 @@
       save(KEY_SOUND, { on: soundOn });
       play("check"); // 鳴るようになったか、その場で確かめられる
     });
+    document.getElementById("voice").addEventListener("change", function () {
+      voiceOn = this.checked;
+      save(KEY_VOICE, { on: voiceOn });
+      if (voiceOn) say("あか さがして"); // 聞こえるか、その場で確かめられる
+      else hush();
+    });
+    document.getElementById("clear-stk").addEventListener("click", function () {
+      if (confirm("もらったシールを すべて消します。よろしいですか？")) {
+        stickers = [];
+        save(KEY_STICKERS, stickers);
+        renderParent();
+      }
+    });
     Array.prototype.forEach.call(document.querySelectorAll("[data-vis]"), function (cb) {
       cb.addEventListener("change", function () {
         var k = cb.getAttribute("data-vis");
@@ -2557,6 +3799,20 @@
       }
     });
   }
+
+  // 新しく増えた あそびは、2〜3さい向けにしているときは メニューに出さない（4さい〜 のもの。保護者メニューで出せる）
+  (function () {
+    var fresh = ["mokkin", "baa", "nurie", "tentsunagi", "meiro", "kotobazukuri"]; // この版で増えたもの
+    var stored = null;
+    try { stored = localStorage.getItem(KEY_KNOWN); } catch (e) {}
+    var known = stored === null ? MENU_ORDER.filter(function (k) { return fresh.indexOf(k) === -1; }) : load(KEY_KNOWN, []);
+    var added = MENU_ORDER.filter(function (k) { return known.indexOf(k) === -1; });
+    if (easy && added.length) {
+      added.forEach(function (k) { if (ageOf(k) >= 4 && hidden.indexOf(k) === -1) hidden.push(k); });
+      save(KEY_HIDDEN, hidden);
+    }
+    save(KEY_KNOWN, MENU_ORDER);
+  })();
 
   go("home");
 })();
