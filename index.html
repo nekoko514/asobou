@@ -235,6 +235,11 @@
     .menu-card { padding: 13px 8px 11px; gap: 7px; }
     .menu-card .ico { font-size: 2.25rem; width: 1.6em; height: 1.6em; }
     .menu-card .label { font-size: 1.25rem; line-height: 1.25; }
+    /* 31こ以上 出しているときは 7列にする（6列のままだと 6段目ができて はみ出す） */
+    .menu-grid:has(> :nth-child(31)) { grid-template-columns: repeat(7, 1fr); gap: 13px 12px; }
+    .menu-grid:has(> :nth-child(31)) .menu-card { padding: 10px 6px 9px; gap: 6px; }
+    .menu-grid:has(> :nth-child(31)) .menu-card .ico { font-size: 2.1rem; width: 1.55em; height: 1.55em; }
+    .menu-grid:has(> :nth-child(31)) .menu-card .label { line-height: 1.2; }
   }
 
   /* ---------- 課題画面 ---------- */
@@ -836,6 +841,118 @@
   .finish-sticker { display: flex; align-items: center; gap: 12px; font-size: 1.4rem; font-weight: 800; color: var(--ink-soft); min-height: 1em; }
   .finish-sticker .stk { position: relative; transform: rotate(var(--r, 0deg)); animation: stk-pop .5s ease-out backwards; font-size: calc(var(--k) * 58px); cursor: default; }
 
+  /* ---------- こえの ものさし ---------- */
+  /* 声の大きさ：ちいさい（ありさん・みどり）／ふつう（ねこさん・きいろ）／おおきい（ぞうさん・さんご色） */
+  #s-koe .prompt { margin-bottom: clamp(4px, 1.4vh, 14px); }
+  .koe-stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; }
+  /* まるい ワッペン（--c：面、--ce：ふち。JS で声の大きさの色を入れる） */
+  .koe-hero { --O: min(calc(var(--k) * 210px), 30vh); --c: #f3ece1; --ce: #e2d4bf; position: relative; width: var(--O); height: var(--O); }
+  /* たて長で高さのある画面（iPad のたて向き）では、まるを大きく */
+  @media (orientation: portrait) and (min-height: 900px) { .koe-hero { --O: min(calc(var(--k) * 290px), 32vh, 60vw); } }
+  .koe-orb {
+    position: absolute; inset: 0; border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.85) 0 12%, rgba(255,255,255,0) 42%), var(--c);
+    box-shadow: inset 0 0 0 4px rgba(255,255,255,.7), 0 8px 0 var(--ce), 0 18px 30px rgba(120,88,56,.12);
+  }
+  .koe-orb::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; border: 3px dashed rgba(255,255,255,.95); pointer-events: none; }
+  .koe-emo { position: relative; font-size: calc(var(--O) * .48); line-height: 1; }
+  .koe-emo.pop { animation: stk-pop .35s ease-out; }
+  .koe-orb.happy .koe-emo { animation: koe-wiggle .32s ease-in-out infinite alternate; }
+  .koe-orb.yay .koe-emo { animation: hop 1.3s ease-in-out; }
+  @keyframes koe-wiggle { from { rotate: -8deg; } to { rotate: 8deg; } }
+  /* できるまでの わっか（ねらった大きさの声が出ているあいだ、ぐるっと たまる） */
+  .koe-ring { position: absolute; left: -10%; top: -10%; width: 120%; height: 120%; rotate: -90deg; pointer-events: none; overflow: visible; }
+  .koe-ring circle { fill: none; stroke-width: 5; }
+  .koe-ring .bg { stroke: rgba(255,255,255,.95); }
+  .koe-ring .fg { stroke: var(--ce); stroke-linecap: round; stroke-dasharray: 289.1; stroke-dashoffset: 289.1; }
+  .koe-hero.free .koe-ring { display: none; }
+  /* 声を出しているあいだ、まわりに 波が ひろがる */
+  .koe-wave { position: absolute; inset: 0; border-radius: 50%; border: 5px solid var(--ce); pointer-events: none;
+              scale: var(--s0, 1); animation: koe-wave 1.2s ease-out forwards; }
+  @keyframes koe-wave { from { opacity: .85; } to { scale: calc(var(--s0, 1) * 1.75); opacity: 0; } }
+  /* 言うことばの ふきだし */
+  .koe-bubble {
+    position: absolute; left: 74%; bottom: 86%; white-space: nowrap;
+    background: #fff; border-radius: 22px; padding: .2em .75em .28em;
+    font-size: clamp(1.35rem, min(3.6vw, 4.4vh), 2.2rem); font-weight: 800;
+    box-shadow: inset 0 0 0 3px #fff7ec, 0 5px 0 var(--edge), 0 10px 20px rgba(120,88,56,.08);
+    animation: prompt-pop .35s ease-out;
+  }
+  .koe-bubble::after { content: ""; position: absolute; left: 16px; bottom: -13px; width: 24px; height: 16px; background: #fff; clip-path: polygon(0 0, 100% 0, 8% 100%); }
+  /* どんなとき：いまの場面を、絵の左上に小さく */
+  .koe-mini { position: absolute; right: 86%; bottom: 84%; font-size: calc(var(--O) * .26); line-height: 1; white-space: nowrap;
+              background: #fff; border-radius: 22px; padding: .14em .22em; box-shadow: 0 4px 0 var(--edge); }
+  /* どんなとき の場面カード */
+  .koe-scene {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 100%;
+    padding: calc(var(--k) * 16px) calc(var(--k) * 34px) calc(var(--k) * 18px);
+    background: linear-gradient(#fff, #fffaf2); border-radius: 30px;
+    box-shadow: inset 0 0 0 3px #fbf1e2, 0 6px 0 var(--edge), 0 14px 26px rgba(120,88,56,.09);
+    animation: choice-in .35s ease-out;
+  }
+  .ks-pic { position: relative; font-size: min(calc(var(--k) * 104px), 16vh); line-height: 1.05; white-space: nowrap; }
+  .ks-sub { position: absolute; right: -.5em; top: -.3em; font-size: .45em; }
+  .ks-t { font-size: clamp(1.25rem, min(3.4vw, 4vh), 1.9rem); font-weight: 800; text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
+  .koe-nomic .ks-pic { opacity: .5; }
+
+  /* ものさし：3つの色の所と、いまの声の所を さす はり（--p：0〜1） */
+  .koe-ruler {
+    --p: 0;
+    position: relative; display: flex; gap: 5px; width: min(100%, 860px); align-self: center; flex: none;
+    margin: clamp(8px, 2vh, 18px) 0 4px; padding: 8px; border-radius: 28px; background: var(--card);
+    box-shadow: inset 0 0 0 3px #fff7ec, 0 6px 0 var(--edge), var(--puff);
+  }
+  .kr-zone {
+    --zc: #cdeedf; --zi: #2d7558;
+    position: relative; flex: 1 1 0; min-width: 0; border: none; font-family: inherit; cursor: pointer;
+    height: calc(var(--k) * 100px); padding: 6px 4px 20px; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px;
+    background: var(--zc); color: var(--zi); font-size: clamp(.92rem, 2vw, 1.2rem); font-weight: 800;
+    transition: opacity .3s ease, scale .3s ease, box-shadow .2s ease;
+  }
+  .kr-zone.z0 { border-radius: 20px 8px 8px 20px; }
+  .kr-zone.z1 { --zc: #ffe8a6; --zi: #85620f; }
+  .kr-zone.z2 { --zc: #ffcfc0; --zi: #9e4a33; border-radius: 8px 20px 20px 8px; }
+  /* ものさしの目もり */
+  .kr-zone::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 7px; height: 9px; opacity: .3;
+                    background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 12px); }
+  .kr-emo { line-height: 1; }
+  .z0 .kr-emo { font-size: calc(var(--k) * 30px); }
+  .z1 .kr-emo { font-size: calc(var(--k) * 42px); }
+  .z2 .kr-emo { font-size: calc(var(--k) * 56px); }
+  .kr-name { white-space: nowrap; }
+  .kr-zone.lit { box-shadow: inset 0 0 0 4px #fff; }
+  .kr-zone.lit .kr-emo { animation: koe-wiggle .3s ease-in-out infinite alternate; }
+  .kr-zone.want { box-shadow: inset 0 0 0 4px #fff, 0 0 0 4px var(--warm); z-index: 1; }
+  /* いまの声の所までは色がこく、そこから先は うすい（メーター）。はりは まるい つまみ */
+  .kr-cover { position: absolute; top: 8px; bottom: 8px; right: 8px; left: calc(8px + var(--p) * (100% - 16px)); z-index: 2;
+              background: rgba(255,255,255,.5); border-radius: 0 20px 20px 0; pointer-events: none; }
+  .kr-knob { position: absolute; top: 2px; bottom: 2px; left: calc(8px + var(--p) * (100% - 16px)); width: 0; z-index: 3; pointer-events: none; }
+  .kr-knob::before { content: ""; position: absolute; top: 8px; bottom: 4px; left: -2.5px; width: 5px; border-radius: 3px; background: var(--warm); }
+  .kr-knob::after { content: ""; position: absolute; top: -12px; left: -14px; width: 28px; height: 28px; border-radius: 50%;
+                    background: #fff; box-shadow: 0 0 0 5px var(--warm), 0 4px 8px rgba(120,88,56,.22); }
+  /* どんなとき：えらぶときは、ものさしの3つの所が そのまま ボタンになる */
+  .koe-ruler.pick .kr-cover, .koe-ruler.pick .kr-knob { display: none; }
+  .koe-ruler.pick .kr-zone { box-shadow: inset 0 -5px 0 rgba(74,59,49,.08); }
+  .koe-ruler.pick .kr-zone:active { scale: .96; }
+  .koe-ruler.two .z1 { display: none; }
+  .kr-zone.dim { opacity: .3; scale: .94; pointer-events: none; }
+  .kr-zone.hint { box-shadow: inset 0 0 0 4px var(--warm); }
+  .kr-zone.right { box-shadow: inset 0 0 0 5px var(--accent); animation: pick .5s ease; }
+  .koe-msg {
+    min-height: 2.6em; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 14px;
+    text-align: center; font-size: 1.15rem; font-weight: 800; color: var(--ink-soft); padding: 6px 0 0;
+  }
+  .koe-msg .sub { width: 100%; font-size: .85rem; font-weight: 700; }
+  .koe-msg .pill { padding: 6px 18px; font-size: 1.05rem; }
+  @media (max-height: 500px) { .kr-zone { height: 64px; padding-bottom: 14px; } .kr-name { font-size: .85rem; } }
+  /* 保護者メニューの ちょうせい */
+  .koe-cal { margin-top: 12px; }
+  .koe-cal .koe-ruler { width: 100%; margin-top: 18px; }
+  .koe-cal .kr-zone { height: 84px; }
+  .cal-sl { display: block; margin-top: 12px; font-size: .95rem; font-weight: 700; }
+  .cal-sl input { display: block; width: 100%; margin-top: 4px; accent-color: var(--accent); }
+
   /* 動きを減らす設定の端末では、飾りの動きを止める */
   @media (prefers-reduced-motion: reduce) {
     .screen.on, .choice, .dot.just, .stars .dot, .bubble, .balloon, .pz-board.done,
@@ -843,9 +960,10 @@
     .pz-slot .pz-piece.snap, .sched-item .check.just,
     .mk-key.hit, .mk-key.next .mk-star, .baa-animal.show, .baa-cloth svg, .ts-dot.start, .ts-dot.hint, .ts-dot.nope,
     .mz-goal, .mz-hero.yay text, .kz-pic.yay, .kz-tile.shake, .kz-slot .kz-tile.snap, .stk.pop,
-    .finish-sticker .stk { animation: none; }
+    .finish-sticker .stk, .koe-emo.pop, .koe-orb.happy .koe-emo, .koe-orb.yay .koe-emo, .koe-bubble, .koe-scene,
+    .kr-zone.lit .kr-emo, .kr-zone.right { animation: none; }
     .balloon { transition: transform .25s ease, opacity .25s ease; }
-    .spark, .fnote { display: none; }
+    .spark, .fnote, .koe-wave { display: none; }
   }
 </style>
 </head>
@@ -1026,6 +1144,19 @@
     </div>
   </section>
 
+  <!-- こえの ものさし -->
+  <section class="screen" id="s-koe">
+    <div class="bar">
+      <button class="back" data-go="menu">もどる</button>
+      <div class="dots" id="koe-dots"></div>
+    </div>
+    <div class="pills" id="koe-pills"></div>
+    <div class="prompt" id="koe-prompt"></div>
+    <div class="koe-stage" id="koe-stage"></div>
+    <div class="koe-ruler" id="koe-ruler"></div>
+    <div class="koe-msg" id="koe-msg"></div>
+  </section>
+
   <!-- シール -->
   <section class="screen" id="s-stickers">
     <div class="bar">
@@ -1078,6 +1209,7 @@
   var KEY_VOICE = "asobou_voice_v1";       // よみあげ
   var KEY_STICKERS = "asobou_stickers_v1"; // もらったシール（はった場所も）
   var KEY_KNOWN = "asobou_known_v1";       // 前に開いたときにあった あそび（新しく増えたものを見分ける）
+  var KEY_KOE = "asobou_koe_v1";           // こえの ものさし の きじゅん（保護者メニューで ちょうせい）
 
   // 以前の名前で保存した記録・スケジュールを引き継ぐ（元のデータは消さない）
   [["dev_log_v1", KEY_LOG], ["dev_sched_v1", KEY_SCHED], ["dev_sched_done_v1", KEY_SCHED_DONE]].forEach(function (p) {
@@ -1176,6 +1308,8 @@
     if (!ctx) return;
     opt = opt || {};
     var t0 = ctx.currentTime + (opt.at || 0);
+    // こえの ものさし：鳴らしている音を マイクで ひろわないように、鳴りおわるまで聞かない
+    micMuteUntil = Math.max(micMuteUntil, performance.now() + ((opt.at || 0) + dur) * 1000 + 250);
     var o = ctx.createOscillator();
     var g = ctx.createGain();
     o.type = opt.type || "sine";
@@ -1265,6 +1399,143 @@
     if (p) say(p.getAttribute("data-say") || p.textContent);
   });
 
+  /* ============ マイク（こえの ものさし） ============ */
+  // 声の大きさだけを見る（録音も送信もしない）。iPad の自動の音量調整などは切って、そのままの大きさを はかる
+  var mic = null;        // いま使っているマイク
+  var micN = null;       // まわりの静かさ（いちばん小さい音の大きさ。dB）
+  var micMuteUntil = 0;  // アプリが音や声を出しているあいだは聞かない（自分の音を ひろわないように）
+  // きじゅん：base＝ふつうの声の大きさ（dB。null なら まわりの静かさから決める）、d1・d2＝ふつうの声から さかいまでの差
+  var koeCal = load(KEY_KOE, {});
+  function fixKoeCal() {
+    if (typeof koeCal.base !== "number" || !isFinite(koeCal.base)) koeCal.base = null;
+    koeCal.d1 = typeof koeCal.d1 === "number" && isFinite(koeCal.d1) ? Math.max(-18, Math.min(-2, koeCal.d1)) : -9;
+    koeCal.d2 = typeof koeCal.d2 === "number" && isFinite(koeCal.d2) ? Math.max(2, Math.min(22, koeCal.d2)) : 9;
+  }
+  fixKoeCal();
+
+  function micStop() {
+    if (!mic) return;
+    var m = mic;
+    mic = null;
+    cancelAnimationFrame(m.raf);
+    if (m.stream) m.stream.getTracks().forEach(function (t) { t.stop(); });
+    if (m.ctx && m.ctx.close) { try { m.ctx.close(); } catch (e) {} }
+  }
+
+  // マイクを開いて、こまごとに cb(dB, 前のこまからの ms, 聞かないとき true, 音が来ないまま 1.5秒) を呼ぶ。
+  // 開けたら ready()、だめなら fail("denied"：許可されていない | "none"：使えない)
+  function micStart(cb, fail, ready) {
+    micStop();
+    var md = navigator.mediaDevices, AC = window.AudioContext || window.webkitAudioContext;
+    if (!md || !md.getUserMedia || !AC) { fail("none"); return; }
+    // 音の処理は、タッチした そのときに作って起こしておく（iPad は タッチの外では 動きはじめないことがある）
+    var ctx;
+    try { ctx = new AC(); } catch (e) { fail("none"); return; }
+    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    var m = mic = { raf: 0, stream: null, ctx: ctx, zero: 0, warm: 0, loud: 0, p1: -100, p2: -100 };
+    micN = null;
+    md.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }).then(function (st) {
+      if (mic !== m) { st.getTracks().forEach(function (t) { t.stop(); }); return; } // 待っているあいだに画面を出た
+      m.stream = st;
+      var src = ctx.createMediaStreamSource(st);
+      var hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 120; // エアコンや車などの低い音は はからない
+      var an = ctx.createAnalyser();
+      an.fftSize = 1024;
+      // スピーカーからは出さない（どこにも つながっていないと動かない端末があるので、音量0でつなぐ）
+      var sink = ctx.createGain();
+      sink.gain.value = 0;
+      src.connect(hp); hp.connect(an); an.connect(sink); sink.connect(ctx.destination);
+      var flt = !!an.getFloatTimeDomainData;
+      var buf = flt ? new Float32Array(an.fftSize) : new Uint8Array(an.fftSize);
+      if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+      var last = performance.now();
+      function loop() {
+        if (mic !== m) return;
+        m.raf = requestAnimationFrame(loop);
+        var now = performance.now(), dt = Math.min(100, now - last), sum = 0, i, v;
+        last = now;
+        if (flt) { an.getFloatTimeDomainData(buf); for (i = 0; i < buf.length; i++) sum += buf[i] * buf[i]; }
+        else { an.getByteTimeDomainData(buf); for (i = 0; i < buf.length; i++) { v = (buf[i] - 128) / 128; sum += v * v; } }
+        var rms = Math.sqrt(sum / buf.length);
+        // 音がまったく来ない（止まっている）こまは数えない
+        if (rms < 1e-5) { m.zero += dt; cb(null, dt, true, m.zero > 1500); return; }
+        m.zero = 0;
+        var db = Math.max(-100, 20 * Math.log(rms) / Math.LN10);
+        if ((synth && (synth.speaking || synth.pending)) || sayTimer !== null) micMuteUntil = Math.max(micMuteUntil, now + 400);
+        // まわりの静かさ。アプリが話しているあいだも はかる（話しおわった とたんに子どもが話しはじめても ずれないように）。
+        // ・はじめの 0.3秒は使わない（音がとどく前の、とちゅうまで空のデータで 小さく出るため）
+        // ・3こま続けて小さいときだけ すぐ下げる（1こまだけの とぎれでは下げない）
+        // ・静かさに近い音のときだけ ゆっくり上げる（話しているあいだは上げない。大きい音が 6秒より長く続いたら、まわりがうるさくなったとみて上げる）
+        var dn = Math.max(db, m.p1, m.p2);
+        m.p2 = m.p1;
+        m.p1 = db;
+        if ((m.warm += dt) < 300) { cb(db, dt, true, false); return; }
+        if (micN === null) micN = dn;
+        else if (dn < micN) micN += (dn - micN) * (1 - Math.exp(-dt / 250));
+        else if (db < micN + 12) { micN += Math.min(db - micN, dt * .001); m.loud = 0; }
+        else if ((m.loud += dt) > 6000) micN += dt * .003;
+        cb(db, dt, now < micMuteUntil, false);
+      }
+      loop();
+      if (ready) ready();
+    }, function (err) {
+      if (mic !== m) return;
+      micStop();
+      fail(err && (err.name === "NotAllowedError" || err.name === "SecurityError") ? "denied" : "none");
+    });
+  }
+  // マイクを使う画面で タッチしたら、止まっていた音の処理を起こす（iPad は タッチしたときにしか動かせないことがある）
+  document.addEventListener("pointerdown", function () {
+    if (mic && mic.ctx && mic.ctx.state !== "running") { try { mic.ctx.resume(); } catch (e) {} }
+  });
+
+  // さかいの大きさ（dB）：[ちいさい／ふつう, ふつう／おおきい]。ちょうせい前は、まわりの静かさ ＋30 を ふつうの声とみる
+  function koeT() {
+    var base = koeCal.base !== null ? koeCal.base : micN === null ? -40 : micN + 30;
+    return [base + koeCal.d1, base + koeCal.d2];
+  }
+  function koeGate() { return (micN === null ? -70 : micN) + 6; } // これより小さい音は「しーん」
+  // 0：ちいさい 1：ふつう 2：おおきい -1：しーん
+  function koeBand(lv) {
+    var t = koeT();
+    return lv <= koeGate() ? -1 : lv < t[0] ? 0 : lv < t[1] ? 1 : 2;
+  }
+  // ものさしの上の はりの位置（0〜1。3つの所を 1/3 ずつ）
+  function koePos(lv) {
+    var t = koeT(), gate = koeGate(), g = Math.min(gate, t[0] - 4), w = t[1] - t[0];
+    if (lv <= gate) return 0;
+    if (lv < t[0]) return Math.max(.04, (lv - g) / (t[0] - g)) / 3;
+    if (lv < t[1]) return (1 + (lv - t[0]) / w) / 3;
+    return (2 + Math.min(.94, (lv - t[1]) / w)) / 3;
+  }
+  function ease(v, to, dt, tau) { return v + (to - v) * (1 - Math.exp(-dt / tau)); }
+  // 声の大きさを なめらかにする。j：できたかを見る用（すばやい）、d：はりの表示用（ゆっくり下がる）
+  function meterStep(m, db, dt) {
+    if (db === null) db = -120;
+    m.j = ease(m.j, db, dt, db > m.j ? 15 : 40);
+    m.d = ease(m.d, db, dt, db > m.d ? 40 : 200);
+  }
+  // ものさし（3つの所 ＋ はり）。こえの ものさし と 保護者メニューの ちょうせい で使う
+  var KOE_LV = [
+    { e: "🐜", name: "ちいさい こえ", c: "#cdeedf", ce: "#8fd0b2" },
+    { e: "🐈", name: "ふつうの こえ", c: "#ffe8a6", ce: "#ecc65f" },
+    { e: "🐘", name: "おおきい こえ", c: "#ffcfc0", ce: "#ee9f86" }
+  ];
+  function rulerHTML() {
+    return KOE_LV.map(function (L, i) {
+      return '<button class="kr-zone z' + i + '" data-lv="' + i + '"><span class="kr-emo">' + L.e + '</span><span class="kr-name">' + L.name + '</span></button>';
+    }).join("") + '<span class="kr-cover"></span><span class="kr-knob"></span>';
+  }
+  function rulerSet(r, p, band) {
+    if (Math.abs(p - (r._p || 0)) > .002) { r.style.setProperty("--p", p.toFixed(3)); r._p = p; }
+    if (band !== r._b) {
+      r._b = band;
+      Array.prototype.forEach.call(r.querySelectorAll(".kr-zone"), function (z, i) { z.classList.toggle("lit", i === band); });
+    }
+  }
+
   /* ============ 画面遷移 ============ */
   var current = "home";
   var timers = [];
@@ -1275,11 +1546,12 @@
     timers.forEach(clearTimeout);
     timers = [];
     hush(); // 前の画面で読んでいた声は止める
+    micStop(); // マイクは こえの ものさし の画面にいるあいだだけ使う
     current = name;
     var ids = {
       home: "s-home", menu: "s-menu", task: "s-task", puzzle: "s-puzzle", pop: "s-pop",
       memory: "s-memory", trace: "s-trace", draw: "s-draw",
-      mokkin: "s-mokkin", baa: "s-baa", nurie: "s-nurie", tentsu: "s-tentsu", maze: "s-maze", word: "s-word",
+      mokkin: "s-mokkin", baa: "s-baa", nurie: "s-nurie", tentsu: "s-tentsu", maze: "s-maze", word: "s-word", koe: "s-koe",
       stickers: "s-stickers", finish: "s-finish", sched: "s-sched", parent: "s-parent"
     };
     Object.keys(ids).forEach(function (k) {
@@ -1643,6 +1915,12 @@
            '<path d="M8 8 H92 V92 H8 Z M36 8 V64 M64 36 V92 M8 64 H22 M64 36 H78" fill="none" stroke="#9a744c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>' +
            '<circle cx="22" cy="24" r="8" fill="#f2a03d"/><circle cx="80" cy="78" r="8" fill="#3fae78"/></svg>',
       label: "めいろ", age: 4, start: startMaze
+    },
+    koe: {
+      ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke-width="8" stroke-linecap="round">' +
+           '<path d="M40 38 Q47 50 40 62" stroke="#5cc49a"/><path d="M57 26 Q70 50 57 74" stroke="#f2bd3a"/>' +
+           '<path d="M74 13 Q94 50 74 87" stroke="#f08a6e"/></g><circle cx="20" cy="50" r="11" fill="#5cc49a"/></svg>',
+      label: "こえの ものさし", start: startKoe
     }
   };
   // 並び順。今までのあそびの位置は変えず、新しいものは後ろに足す
@@ -1650,7 +1928,7 @@
     "size", "count", "sort", "onoma", "iro", "katachi", "onaji", "kage", "kimochi", "kotoba", "ooi",
     "hame", "eawase", "bubble", "balloon",
     "pattern", "suuji", "hazure", "memory", "nazori", "kana", "kata", "numtrace", "oekaki",
-    "mokkin", "baa", "nurie", "tentsunagi", "meiro", "kotobazukuri"
+    "mokkin", "baa", "nurie", "tentsunagi", "meiro", "kotobazukuri", "koe"
   ];
   // 保護者メニューの記録に出すもの（自由あそびは記録をとらない）
   function recordedKeys() {
@@ -1669,7 +1947,8 @@
     memory: ["#f0e7fb", "#c8b2ec"], nazori: ["#e2f2ec", "#a4d3c2"], oekaki: ["#fdeaf5", "#efb0d5"],
     kana: ["#fff2d8", "#eccb88"], kata: ["#e6f0e2", "#b0c9a4"], numtrace: ["#e7eef7", "#a9c0da"],
     mokkin: ["#fff0e0", "#f1c38e"], baa: ["#fde7ee", "#f0b1c4"], nurie: ["#f7ecfd", "#d9b3e8"],
-    tentsunagi: ["#e8f2ff", "#a9c6ee"], meiro: ["#eef6e0", "#bcd796"], kotobazukuri: ["#fff4dc", "#ecc98a"]
+    tentsunagi: ["#e8f2ff", "#a9c6ee"], meiro: ["#eef6e0", "#bcd796"], kotobazukuri: ["#fff4dc", "#ecc98a"],
+    koe: ["#ffe6de", "#f1ad97"]
   };
 
   // 色（#rrggbb）の 色相 と あざやかさ。カードの明るさは CSS でそろえるので、ここでは使わない。
@@ -3558,6 +3837,317 @@
     later(function () { kz.i++; nextWord(); }, 2200);
   }
 
+  /* ============ こえの ものさし（マイク・記録なし） ============ */
+  // 声の大きさを「ちいさい こえ（ありさん）／ふつうの こえ（ねこさん）／おおきい こえ（ぞうさん）」の3つで見せる。
+  // じゆう：声を出すと はりと絵がうごく。いってみよう：言われた大きさで言う。どんなとき：場面に合う声をえらんで、言う。
+  // 合わなくても×はなく、しばらくすると「もうすこし ちいさく」などのヒントと「つぎへ」が出る
+  var KOE_HOLD = 700; // ねらった大きさの声が あわせて 0.7秒 出たら できた
+  var KOE_WORDS = ["おはよう", "こんにちは", "ありがとう", "いただきます", "おやすみ", "ばいばい", "もしもし", "やっほー"];
+  var KOE_WORDS_EASY = ["あー", "ばいばい", "もしもし", "やっほー", "おはよう"];
+  // どんなとき：場面と、合う声の大きさ（lv）と、そのとき言うことば
+  var KOE_SCENES = [
+    { lv: 0, e: "👶", sub: "💤", t: "あかちゃんが ねてる", w: "おやすみ" },
+    { lv: 0, e: "🤫", t: "ないしょの おはなし", w: "あのね" },
+    { lv: 0, e: "🚃", t: "でんしゃの なか", w: "つぎ おりるよ" },
+    { lv: 0, e: "📚", t: "としょかん", w: "これ よもう" },
+    { lv: 1, e: "🧒👧", t: "となりの おともだちと", w: "あそぼう" },
+    { lv: 1, e: "🍙", t: "ごはんの とき", w: "おいしいね" },
+    { lv: 1, e: "🏪", t: "おみせで", w: "これ ください" },
+    { lv: 1, e: "☎️", t: "でんわで", w: "もしもし" },
+    { lv: 2, e: "🏞️", sub: "🙋", t: "とおくの おともだちを よぶ", w: "おーい" },
+    { lv: 2, e: "📣", t: "うんどうかいの おうえん", w: "がんばれー" },
+    { lv: 2, e: "⛰️", t: "やまの うえで", w: "やっほー" }
+  ];
+  var KOE_MODES = [{ k: "free", t: "🎤 じゆう" }, { k: "say", t: "💬 いってみよう" }, { k: "scene", t: "🏠 どんなとき" }];
+  var koe = null;
+
+  function startKoe() {
+    go("koe");
+    koe = { mode: null, mic: "wait", stall: false, m: { j: -120, d: -120 }, i: 0, q: null, step: null, last: [], waveAt: 0, band: -2 };
+    var pills = document.getElementById("koe-pills");
+    pills.innerHTML = "";
+    KOE_MODES.forEach(function (md) {
+      var b = el("button", "pill");
+      b.textContent = md.t;
+      b.setAttribute("data-mode", md.k);
+      b.addEventListener("click", function () { play("tap"); koeMode(md.k); });
+      pills.appendChild(b);
+    });
+    var r = koe.r = document.getElementById("koe-ruler");
+    r.innerHTML = rulerHTML();
+    r._p = 0;
+    r._b = null;
+    r.style.setProperty("--p", 0);
+    koeMode("free");
+    koeListen();
+  }
+
+  function koeListen() {
+    koe.mic = "wait";
+    koe.stall = false;
+    koeMsg();
+    micStart(koeFrame, function (why) {
+      if (!koe || current !== "koe") return;
+      koe.mic = why;
+      koeMsg();
+      if (koe.step !== "pick" && koe.step !== "picked") koeShow(); // 絵のところにも「つかえないよ」を出す
+    }, function () {
+      if (!koe) return;
+      koe.mic = "ok";
+      koeMsg();
+    });
+  }
+
+  function koeMode(mode) {
+    timers.forEach(clearTimeout);
+    timers = [];
+    koe.mode = mode;
+    koe.i = 0;
+    koe.q = null;
+    koe.step = null;
+    koe.last = [];
+    Array.prototype.forEach.call(document.querySelectorAll("#koe-pills .pill"), function (b) {
+      b.classList.toggle("on", b.getAttribute("data-mode") === mode);
+    });
+    if (mode === "free") {
+      document.getElementById("koe-dots").innerHTML = "";
+      koePrompt("こえを だしてみて");
+      koeShow();
+      koeMsg();
+      return;
+    }
+    drawDots("koe-dots", ROUND, 0);
+    if (mode === "scene") koe.bag = koeScenes();
+    koeNext();
+  }
+
+  // どんなとき の5つの場面。2〜3さい向けのときは、ちいさい と おおきい だけ。同じ大きさは3回続けない
+  function koeScenes() {
+    var pool = KOE_SCENES.filter(function (s) { return !easy || s.lv !== 1; }), bag, n = 0;
+    do {
+      bag = shuffle(pool).slice(0, ROUND);
+    } while (n++ < 50 && bag.some(function (s, i) { return i >= 2 && s.lv === bag[i - 1].lv && s.lv === bag[i - 2].lv; }));
+    return bag;
+  }
+
+  function koeNext() {
+    if (koe.i >= ROUND) { finish(ROUND); return; }
+    if (koe.mode === "scene") { koeSceneQ(koe.bag[koe.i]); return; }
+    // いってみよう：同じ大きさは2回続けない（2〜3さい向けで ちいさい・おおきい だけのときは、3回続けない）
+    var lvs = easy ? [0, 2] : [0, 1, 2], lv, w, n = 0;
+    do { lv = pick(lvs); } while (n++ < 30 && repeated(koe.last, lv, easy ? 2 : 1));
+    koe.last = koe.last.concat(lv).slice(-2);
+    var words = easy ? KOE_WORDS_EASY : KOE_WORDS, prev = koe.q && koe.q.word;
+    n = 0;
+    do { w = pick(words); } while (n++ < 30 && w === prev);
+    koeSayQ(lv, w);
+  }
+
+  function koePrompt(text, sayText) {
+    var pr = document.getElementById("koe-prompt");
+    pr.textContent = text;
+    pr.setAttribute("data-say", sayText || text);
+    pr.classList.remove("pop");
+    void pr.offsetWidth;
+    pr.classList.add("pop");
+    say(sayText || text);
+  }
+
+  // 言われた大きさで言う（いってみよう／どんなとき の2つめ）
+  function koeSayQ(lv, w, scene) {
+    koe.step = "say";
+    koe.q = { lv: lv, word: w, scene: scene || null, hold: 0, off: 0, dir: 0, hinted: false, done: false, on: false, onT: 0, shown: 0 };
+    koePrompt(KOE_LV[lv].name + "で「" + w + "」", KOE_LV[lv].name + "で、" + w);
+    koeShow();
+    koeMsg();
+  }
+
+  // 場面を見て、ものさしの3つの所から 合う声をえらぶ
+  function koeSceneQ(sc) {
+    koe.step = "pick";
+    koe.scene = sc;
+    koe.q = null;
+    koePrompt("こえを えらんで", sc.t + "。こえを えらんで");
+    koeShow();
+    koeMsg();
+  }
+
+  function scenePic(sc) {
+    return sc.e + (sc.sub ? '<span class="ks-sub">' + sc.sub + '</span>' : "");
+  }
+
+  // 真ん中の絵と、ものさしの見た目を、いまの状態に合わせる
+  function koeShow() {
+    var st = document.getElementById("koe-stage"), r = koe.r, q = koe.q, picking = koe.step === "pick";
+    r.classList.toggle("pick", picking);
+    r.classList.toggle("two", picking && easy);
+    Array.prototype.forEach.call(r.querySelectorAll(".kr-zone"), function (z) {
+      z.classList.remove("dim", "hint", "right");
+      z.classList.toggle("want", !!q && +z.getAttribute("data-lv") === q.lv);
+    });
+    koe.hero = koe.orb = null;
+    if (picking) {
+      st.innerHTML = '<div class="koe-scene"><span class="ks-pic">' + scenePic(koe.scene) + '</span><span class="ks-t">' + koe.scene.t + '</span></div>';
+      return;
+    }
+    if (koe.mic === "denied" || koe.mic === "none") {
+      st.innerHTML = '<div class="koe-scene koe-nomic"><span class="ks-pic">🎤</span><span class="ks-t">マイクが つかえないよ</span></div>';
+      return;
+    }
+    var L = q ? KOE_LV[q.lv] : null;
+    st.innerHTML = '<div class="koe-hero' + (q ? "" : " free") + '">' +
+      '<svg class="koe-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" cx="50" cy="50" r="46"/></svg>' +
+      '<div class="koe-orb"><span class="koe-emo">' + (L ? L.e : "🎤") + '</span></div>' +
+      (q ? '<div class="koe-bubble">' + esc(q.word) + '</div>' : "") +
+      (q && q.scene ? '<div class="koe-mini">' + scenePic(q.scene) + '</div>' : "") + '</div>';
+    koe.hero = st.querySelector(".koe-hero");
+    koe.orb = st.querySelector(".koe-orb");
+    koe.emo = st.querySelector(".koe-emo");
+    koe.fg = st.querySelector(".koe-ring .fg");
+    koe.band = -2;
+    koe.sc = 0;
+    koeColor(q ? q.lv : -1);
+  }
+
+  function koeColor(lv) {
+    var L = KOE_LV[lv];
+    koe.hero.style.setProperty("--c", L ? L.c : "#f3ece1");
+    koe.hero.style.setProperty("--ce", L ? L.ce : "#e2d4bf");
+  }
+
+  // ものさしの下の ひとこと（マイクのようす・ヒント）
+  function koeMsg() {
+    var box = document.getElementById("koe-msg"), q = koe.q, h = "";
+    if (koe.mic === "wait") h = "マイクを じゅんびしているよ<span class='sub'>（はじめてのときは、マイクの「許可」を おしてください）</span>";
+    else if (koe.mic === "denied") h = "マイクが つかえません<span class='sub'>保護者の方へ：iPad の 設定 →（アプリ →）Safari → マイク を「許可」にして、開きなおしてください</span>";
+    else if (koe.mic === "none") h = "この たんまつでは マイクが つかえません";
+    else if (koe.stall) h = "がめんを タッチしてね";
+    else if (q && q.hinted && !q.done) h = (q.dir < 0 ? "もうすこし ちいさく" : "もうすこし おおきく") + '<button class="pill" id="koe-skip">つぎへ</button>';
+    else if (koe.mode === "free" && koeCal.base === null) h = "<span class='sub'>保護者の方へ：声の大きさの きじゅんは、保護者メニューで ちょうせいできます</span>";
+    if (box._h === h) return;
+    box._h = h;
+    box.innerHTML = h;
+  }
+
+  function koeFrame(db, dt, muted, stalled) {
+    if (!koe || current !== "koe") return;
+    if (stalled !== koe.stall) { koe.stall = stalled; koeMsg(); }
+    meterStep(koe.m, muted ? null : db, dt);
+    var b = koeBand(koe.m.d), picking = koe.step === "pick" || koe.step === "picked";
+    rulerSet(koe.r, picking ? 0 : koePos(koe.m.d), picking ? -1 : b);
+    if (!koe.orb) return;
+    if (koe.mode === "free") koeFree(b);
+    else if (koe.step === "say" && !koe.q.done && !muted) koeJudge(dt);
+  }
+
+  // じゆう：声が大きいほど まるが大きくなり、中の どうぶつが かわる。声を出しているあいだ 波がひろがる
+  function koeFree(b) {
+    var s = .62 + koePos(koe.m.d) * .5;
+    if (Math.abs(s - koe.sc) > .004) { koe.orb.style.scale = s.toFixed(3); koe.sc = s; }
+    if (b !== koe.band) {
+      koe.band = b;
+      koe.emo.textContent = b < 0 ? "🎤" : KOE_LV[b].e;
+      koeColor(b);
+      koe.emo.classList.remove("pop");
+      void koe.emo.offsetWidth;
+      if (b >= 0) koe.emo.classList.add("pop");
+    }
+    var now = performance.now();
+    if (b >= 0 && now - koe.waveAt > [620, 440, 300][b]) {
+      koe.waveAt = now;
+      var w = el("span", "koe-wave");
+      w.style.setProperty("--s0", s.toFixed(3));
+      koe.hero.insertBefore(w, koe.hero.firstChild); // 絵のうしろに
+      setTimeout(function () { w.remove(); }, 1300);
+    }
+  }
+
+  // ねらった大きさの声のあいだ わっかが たまり、ちがう大きさのあいだは 少しずつ もどる（声の切れ目は数えない）
+  function koeJudge(dt) {
+    var q = koe.q, b = koeBand(koe.m.j), now = performance.now();
+    if (b === q.lv) { q.hold += dt; q.onT = now; }
+    else if (b >= 0) {
+      q.hold = Math.max(0, q.hold - dt * 1.5);
+      q.off += dt;
+      var dir = b > q.lv ? -1 : 1;
+      if (dir !== q.dir) { q.dir = dir; if (q.hinted) koeMsg(); }
+    }
+    var on = now - q.onT < 300; // 声の切れ目で ぱたぱた しないよう、少しのあいだ続ける
+    if (on !== q.on) { q.on = on; koe.orb.classList.toggle("happy", on); }
+    var f = Math.min(1, q.hold / KOE_HOLD);
+    if (Math.abs(f - q.shown) > .008) { q.shown = f; koe.fg.style.strokeDashoffset = (289.1 * (1 - f)).toFixed(1); }
+    if (q.hold >= KOE_HOLD) { koeDone(); return; }
+    if (!q.hinted && q.off > 2000) {
+      q.hinted = true;
+      koeMsg();
+      say(q.dir < 0 ? "もうすこし ちいさく" : "もうすこし おおきく");
+    }
+  }
+
+  function koeDone() {
+    var q = koe.q;
+    q.done = true;
+    koe.orb.classList.remove("happy");
+    koe.orb.classList.add("yay");
+    koe.fg.style.strokeDashoffset = 0;
+    play("right");
+    burst(koe.orb, 12);
+    koeStar(1400);
+  }
+  // ヒントのあとの「つぎへ」：できなくても先へ進める（星は「やりきった数」なので つく）
+  function koeSkip() {
+    if (!koe.q || koe.q.done) return;
+    koe.q.done = true;
+    play("tap");
+    koeStar(350);
+  }
+  function koeStar(ms) {
+    koe.i++;
+    drawDots("koe-dots", ROUND, koe.i);
+    koeMsg();
+    later(koeNext, ms);
+  }
+
+  // ものさしの所をタッチ：どんなとき では答え。ほかでは その声の名前を読む
+  document.getElementById("koe-ruler").addEventListener("click", function (e) {
+    var z = e.target.closest(".kr-zone");
+    if (!z || !koe) return;
+    var lv = +z.getAttribute("data-lv");
+    if (koe.step !== "pick") {
+      if (koe.step !== "picked") say(KOE_LV[lv].name);
+      return;
+    }
+    var sc = koe.scene;
+    if (lv !== sc.lv) {
+      // 減点なし・バツなし。そっと しぼむだけで、1回外すと 合う所に枠が出る
+      z.classList.add("dim");
+      var right = koe.r.querySelector('.kr-zone[data-lv="' + sc.lv + '"]');
+      if (right) right.classList.add("hint");
+      return;
+    }
+    koe.step = "picked";
+    z.classList.remove("hint");
+    z.classList.add("right");
+    play("right");
+    burst(z, 10);
+    // マイクが使えないときは、えらべたら おしまい（言うのは とばす）
+    if (koe.mic === "denied" || koe.mic === "none") { koeStar(900); return; }
+    later(function () { koeSayQ(sc.lv, sc.w, sc); }, 900);
+  });
+  document.getElementById("koe-msg").addEventListener("click", function (e) {
+    if (e.target.closest("#koe-skip")) koeSkip();
+  });
+  // 「がめんを タッチしてね」のとき（マイクの音が とどかない）は、タッチで起こす。
+  // 止まっていた音の処理は マイクのところの pointerdown で起こし、動いているのに音が来ないときだけ マイクを開きなおす
+  document.getElementById("s-koe").addEventListener("pointerdown", function () {
+    if (koe && koe.stall && (!mic || !mic.ctx || mic.ctx.state === "running")) koeListen();
+  });
+  // ほかのアプリに切りかえたら マイクを止め、もどってきたら また聞く
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) micStop();
+    else if (current === "koe" && koe) koeListen();
+  });
+
   /* ============ シール ============ */
   // あそびを最後までやると1まいもらえる。ホームの「シール」で、ページのすきな所にはれる
   var STICKER_POOL = ["🐶", "🐱", "🐰", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐤", "🦄",
@@ -3716,6 +4306,53 @@
   lz.addEventListener("mouseup", endPress);
   lz.addEventListener("mouseleave", endPress);
 
+  /* --- こえの ものさし の ちょうせい（保護者メニュー） --- */
+  var calM = null; // ちょうせい中：{ m：はりの なめらかさ, rec：はかっている途中 }
+  function calNow() {
+    return "いまの きじゅん：" + (koeCal.base === null ? "おまかせ（まわりの静かさから決めています）" : "ちょうせいずみ（はかった ふつうの声）");
+  }
+  function calListen() {
+    calM = { m: { j: -120, d: -120 }, rec: null };
+    var st = document.getElementById("cal-st"), go1 = document.getElementById("cal-go");
+    st.textContent = "マイクを じゅんびしています…（はじめてのときは「許可」を押してください）";
+    go1.disabled = true;
+    micStart(calFrame, function (why) {
+      if (current !== "parent") return;
+      st.textContent = why === "denied" ? "マイクが 許可されていません。設定 →（アプリ →）Safari → マイク を確かめてください。" : "この端末では マイクが使えません。";
+    }, function () {
+      if (current !== "parent" || !calM) return;
+      st.textContent = "声を出すと、はりが うごきます。";
+      go1.disabled = false;
+    });
+  }
+  function calFrame(db, dt, muted) {
+    var r = document.getElementById("cal-ruler");
+    if (current !== "parent" || !calM || !r) return;
+    meterStep(calM.m, muted ? null : db, dt);
+    rulerSet(r, koePos(calM.m.d), koeBand(calM.m.d));
+    var rec = calM.rec, st = document.getElementById("cal-st");
+    if (!rec || muted) return;
+    rec.t += dt;
+    // 声の出ているこまだけを集める（ことばの切れ目は入れない）
+    if (db !== null && db > koeGate() + 4) { rec.vals.push(db); rec.on += dt; }
+    var left = Math.max(1, Math.ceil((3000 - rec.t) / 1000));
+    if (left !== rec.left) { rec.left = left; st.textContent = "ふつうの声で 話してください… " + left; }
+    if (rec.t < 3000) return;
+    calM.rec = null;
+    document.getElementById("cal-go").disabled = false;
+    if (rec.on < 700) { st.textContent = "声が きこえませんでした。もう一度 押してください。"; return; }
+    rec.vals.sort(function (a, b) { return a - b; });
+    koeCal.base = rec.vals[Math.floor(rec.vals.length / 2)];
+    fixKoeCal();
+    save(KEY_KOE, koeCal);
+    document.getElementById("cal-now").textContent = calNow();
+    st.textContent = "はかりました。ちいさい声・おおきい声も出して、はりの行く所を 確かめてください。";
+    play("check");
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && current === "parent" && calM) calListen();
+  });
+
   function dayKey(ts) {
     var d = new Date(ts);
     return d.getFullYear() + "/" + (d.getMonth() + 1) + "/" + d.getDate();
@@ -3724,6 +4361,8 @@
   function renderParent() {
     var body = document.getElementById("parent-body");
     var html = "";
+    micStop(); // 作りなおすと ちょうせいの ものさしが消えるので、マイクも止める
+    calM = null;
 
     /* --- 課題別の記録 --- */
     html += "<h2>課題別の記録</h2><div class='panel'>";
@@ -3784,6 +4423,23 @@
             "てんつなぎでは数字を、ことばづくりでは文字とことばを読みます。<br>" +
             (synth ? "声の種類は iPad の「設定 → アクセシビリティ → 読み上げコンテンツ → 声」で変えられます。"
                    : "この端末では 読み上げが使えません。") + "</p>";
+    html += "</div>";
+
+    /* --- こえの ものさし --- */
+    html += "<h2>こえの ものさし（マイク）</h2><div class='panel'>";
+    html += "<p style='margin:0' id='cal-now'>" + calNow() + "</p>";
+    html += "<button class='mini ghost' id='cal-open' style='margin-top:10px'>マイクで ちょうせいする</button>";
+    html += "<div class='koe-cal' id='koe-cal' hidden>" +
+            "<div class='koe-ruler' id='cal-ruler'>" + rulerHTML() + "</div>" +
+            "<p class='note' id='cal-st' style='margin:6px 0 10px'></p>" +
+            "<button class='mini' id='cal-go' disabled>ふつうの こえを はかる（3びょう）</button>" +
+            "<label class='cal-sl'>ちいさい ／ ふつう の さかい<input type='range' id='cal-d1' min='-18' max='-2' step='1' value='" + koeCal.d1 + "'></label>" +
+            "<label class='cal-sl'>ふつう ／ おおきい の さかい<input type='range' id='cal-d2' min='2' max='22' step='1' value='" + koeCal.d2 + "'></label>" +
+            "<button class='mini warn' id='cal-reset' style='margin-top:14px'>はじめの せっていに もどす</button></div>";
+    html += "<p class='note'>声の大きさを「ちいさい／ふつう／おおきい」に分ける きじゅんです。はじめは まわりの静かさから決めています。" +
+            "ずれるときは、子どもが あそぶ場所で「マイクで ちょうせいする」→「ふつうの こえを はかる」を押し、おとなが iPad から 50cm くらいの所で、3びょう ふつうの声で話してください（「きょうは いい てんきだね…」など）。<br>" +
+            "はかったあと、ちいさい声・おおきい声も出して、はりが それぞれの所に行くか確かめられます。スライダーを右にすると、そのさかいを こえるのに 大きい声が いるようになります。<br>" +
+            "マイクの音は 大きさを見るだけで、録音も送信もしません。マイクは こえの ものさし の画面と、ここで ちょうせいしているあいだだけ使います。</p>";
     html += "</div>";
 
     /* --- シール --- */
@@ -3855,6 +4511,9 @@
             "・めいろ：ゆびで どうぶつを動かしてゴールへ。壁のむこうへは行けないだけで、時間制限なし。3→4→5だん と広くなる（記録なし）<br>" +
             "・ことばづくり：絵を見て、文字カードをことばの順にタッチ。わくに うすいお手本の字がある。2→3→4文字。" +
             "ちがうカードは ゆれるだけで、1回まちがえると正しいカードに枠が出る。4さい〜 のときは、ことばに無い字のカードが1まい まざる<br>" +
+            "・こえの ものさし：マイクで声の大きさだけを見て（録音・送信なし）、ちいさい（ありさん）／ふつう（ねこさん）／おおきい（ぞうさん）の3つで見せる。" +
+            "じゆう・いってみよう（言われた大きさで言う）・どんなとき（場面に合う声をえらんで言う）。合わなくても×はなく、しばらくすると「もうすこし ちいさく」などのヒントと「つぎへ」が出る。" +
+            "2〜3さい のときは ちいさい と おおきい だけ（記録なし）<br>" +
             "・シール：あそびを最後までやると1まいもらえる。ホームの「シール」で、ページにはれる<br>" +
             "・よみあげ：お題を端末の声で読む。お題のラベルをタッチすると もう一度読む<br>" +
             "・iPad の「アクセスガイド」（設定→アクセシビリティ）を使うとアプリから出られなくできる<br>" +
@@ -3902,6 +4561,32 @@
       if (voiceOn) say("あか さがして"); // 聞こえるか、その場で確かめられる
       else hush();
     });
+    document.getElementById("cal-open").addEventListener("click", function () {
+      var box = document.getElementById("koe-cal");
+      box.hidden = !box.hidden;
+      this.textContent = box.hidden ? "マイクで ちょうせいする" : "ちょうせいを とじる";
+      if (box.hidden) { micStop(); calM = null; } else calListen();
+    });
+    document.getElementById("cal-go").addEventListener("click", function () {
+      if (!calM || calM.rec) return;
+      calM.rec = { t: 0, on: 0, vals: [], left: 0 };
+      this.disabled = true;
+    });
+    ["d1", "d2"].forEach(function (k) {
+      document.getElementById("cal-" + k).addEventListener("input", function () {
+        koeCal[k] = +this.value;
+        fixKoeCal();
+        save(KEY_KOE, koeCal);
+      });
+    });
+    document.getElementById("cal-reset").addEventListener("click", function () {
+      koeCal = {};
+      fixKoeCal();
+      save(KEY_KOE, koeCal);
+      document.getElementById("cal-d1").value = koeCal.d1;
+      document.getElementById("cal-d2").value = koeCal.d2;
+      document.getElementById("cal-now").textContent = calNow();
+    });
     document.getElementById("clear-stk").addEventListener("click", function () {
       if (confirm("もらったシールを すべて消します。よろしいですか？")) {
         stickers = [];
@@ -3947,7 +4632,7 @@
 
   // 新しく増えた あそびは、2〜3さい向けにしているときは メニューに出さない（4さい〜 のもの。保護者メニューで出せる）
   (function () {
-    var fresh = ["mokkin", "baa", "nurie", "tentsunagi", "meiro", "kotobazukuri"]; // この版で増えたもの
+    var fresh = ["mokkin", "baa", "nurie", "tentsunagi", "meiro", "kotobazukuri", "koe"]; // known の記録がない（前の版から使っている）人にとって、新しいもの
     var stored = null;
     try { stored = localStorage.getItem(KEY_KNOWN); } catch (e) {}
     var known = stored === null ? MENU_ORDER.filter(function (k) { return fresh.indexOf(k) === -1; }) : load(KEY_KNOWN, []);
