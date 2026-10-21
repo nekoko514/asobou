@@ -181,17 +181,23 @@
   .dots.many .dot { width: 22px; height: 22px; }
 
   /* ---------- 課題メニュー ---------- */
-  .menu-grid {
-    display: grid; grid-template-columns: repeat(2, 1fr);
-    gap: 16px 14px; align-content: start; padding-bottom: 6px;
-  }
-  @media (min-width: 700px) { .menu-grid { grid-template-columns: repeat(3, 1fr); gap: 22px 18px; } }
-  @media (min-width: 1000px) { .menu-grid { grid-template-columns: repeat(4, 1fr); } }
-  @media (min-width: 1100px) { .menu-grid { grid-template-columns: repeat(6, 1fr); gap: 16px; } }
-  /* ワッペンのようなカード。色は あそびごとに JS で --h（色相）と --s（あざやかさ）を入れ、明るさは全部そろえる
-    （30色が ばらばらにならず、ひとつの絵本のようにまとまる）。中に白いステッチ、上に つや */
-  .menu-card {
+  /* 種類ごとの たな（うすい色の台に、見出しと カード）。色は たなごとに JS で --h（色相）と --s（あざやかさ）を入れ、
+     中のカードも同じ色にする（明るさは全部そろえる）。せまい画面では たなが たてに ならび、スクロールする */
+  .menu-grid { display: flex; flex-direction: column; gap: 14px; padding-bottom: 6px; }
+  .menu-sec {
     --h: 30; --s: 70%;
+    position: relative; border-radius: 26px; padding: 8px 10px 12px;
+    background: hsl(var(--h) var(--s) 96% / .8);
+    box-shadow: inset 0 0 0 2px hsl(var(--h) var(--s) 89%);
+  }
+  .sec-title {
+    display: flex; align-items: center; gap: 6px; margin: 0 0 8px 6px;
+    font-size: 1.05rem; font-weight: 800; letter-spacing: .04em; line-height: 1.3; color: hsl(var(--h) 35% 34%);
+  }
+  .sec-title .si { font-size: 1.2em; line-height: 1; }
+  .sec-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px 10px; }
+  /* ワッペンのようなカード。中に白いステッチ */
+  .menu-card {
     position: relative;
     border: none; border-radius: 28px;
     background: linear-gradient(hsl(var(--h) var(--s) 95.5%), hsl(var(--h) var(--s) 89%));
@@ -203,7 +209,7 @@
     transition: transform .1s ease, box-shadow .1s ease;
     /* メニューを開くと、カードが順番に ぽんぽんと出る（--i は JS で入れる並び順） */
     animation: card-in .34s ease-out backwards;
-    animation-delay: calc(var(--i, 0) * .035s);
+    animation-delay: calc(var(--i, 0) * .03s);
   }
   .menu-card::before {
     content: ""; position: absolute; inset: 6px; border-radius: 22px; pointer-events: none;
@@ -225,21 +231,24 @@
   /* 「おおきい ちいさい」が「ちい／さい」のように途中で切れないよう、空白でだけ折り返す */
   .menu-card .label { position: relative; font-size: 1.2rem; font-weight: 800; text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
   @media (min-width: 700px) {
-    .menu-card { padding: 22px 12px 18px; }
-    .menu-card .ico { font-size: 2.4rem; width: 1.75em; height: 1.75em; }
-    .menu-card .label { font-size: 1.35rem; }
+    .sec-cards { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px 14px; }
+    .menu-card { padding: 16px 8px 14px; gap: 8px; }
+    .menu-card .ico { font-size: 2.3rem; width: 1.7em; height: 1.7em; }
+    .menu-card .label { font-size: 1.15rem; line-height: 1.25; }
   }
-  /* あそびが増えても、iPad の横向きなら1画面に収まるように少しつめる（30こ＝6列×5段） */
-  @media (min-width: 1100px) {
-    .menu-grid { gap: 14px; }
-    .menu-card { padding: 13px 8px 11px; gap: 7px; }
-    .menu-card .ico { font-size: 2.25rem; width: 1.6em; height: 1.6em; }
-    .menu-card .label { font-size: 1.25rem; line-height: 1.25; }
-    /* 31こ以上 出しているときは 7列にする（6列のままだと 6段目ができて はみ出す） */
-    .menu-grid:has(> :nth-child(31)) { grid-template-columns: repeat(7, 1fr); gap: 13px 12px; }
-    .menu-grid:has(> :nth-child(31)) .menu-card { padding: 10px 6px 9px; gap: 6px; }
-    .menu-grid:has(> :nth-child(31)) .menu-card .ico { font-size: 2.1rem; width: 1.55em; height: 1.55em; }
-    .menu-grid:has(> :nth-child(31)) .menu-card .label { line-height: 1.2; }
+  /* iPad の横向き：たなを横にならべて、ぜんぶ1画面に収める。横幅を いくつかの「ます」に分け（--u：1ますの幅。
+     JS の fitMenu が、出している あそびの数と画面の大きさから決める。ぜんぶ出すと 9ます＝4こ＋4こ／5こ＋4こ／5こ＋4こ／5こ の4段）、
+     たなは カードの数だけの ますの幅にする。あそびが少ないときは ますが大きくなり、カードも大きくなる。ならびは まん中にそろえる */
+  @media (min-width: 1000px) and (orientation: landscape) {
+    .menu-grid { --u: var(--cw, 107px); flex-direction: row; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 12px; }
+    /* 端数で はみ出して折り返さないよう、ほんの少し せまく */
+    .menu-sec { width: calc(var(--u) * var(--n) + (var(--n) - 1) * 12px - .5px); padding: 7px 8px 10px; border-radius: 24px; }
+    .sec-cards { grid-template-columns: repeat(var(--n), 1fr); gap: 8px; }
+    .sec-title { font-size: .95rem; margin: 0 0 6px 6px; }
+    .menu-card { padding: 11px 3px 9px; gap: 6px; border-radius: 22px; }
+    .menu-card::before { inset: 5px; border-radius: 17px; }
+    .menu-card .ico { font-size: calc(var(--u) * .32); width: 1.55em; height: 1.55em; }
+    .menu-card .label { font-size: min(calc(var(--u) * .148), 1.35rem); line-height: 1.2; }
   }
 
   /* ---------- 課題画面 ---------- */
@@ -659,6 +668,8 @@
   .edit-row .grip { font-size: 1.5rem; width: 1.4em; flex: none; display: flex; justify-content: center; }
   .edit-row .nm { flex: 1; font-size: 1rem; }
   .vis-row { cursor: pointer; }
+  .vis-head { margin: 14px 0 0; font-weight: 800; color: var(--ink-soft); }
+  .vis-head:first-child { margin-top: 0; }
   .vis-row input { width: 24px; height: 24px; margin: 0 4px 0 0; flex: none; accent-color: var(--accent); }
   .note { font-size: .85rem; color: var(--ink-soft); line-height: 1.8; margin-top: 8px; }
   /* 影が切れないよう内側に余白をとり、その分を外側のマイナス余白で戻す */
@@ -1927,44 +1938,23 @@
       label: "こえの ものさし", start: startKoe
     }
   };
-  // 並び順。今までのあそびの位置は変えず、新しいものは後ろに足す
-  var MENU_ORDER = [
-    "size", "count", "sort", "onoma", "iro", "katachi", "onaji", "kage", "kimochi", "kotoba", "ooi",
-    "hame", "eawase", "bubble", "balloon",
-    "pattern", "suuji", "hazure", "memory", "nazori", "kana", "kata", "numtrace", "oekaki",
-    "mokkin", "baa", "nurie", "tentsunagi", "meiro", "kotobazukuri", "koe"
+  // メニューは 種類ごとの たなに分けて並べる。h・s は たなとカードの色（色相・あざやかさ。明るさは CSS でそろえる）。
+  // 新しい あそびは、合う たなに足す
+  var MENU_GROUPS = [
+    { name: "くらべる", ico: "🔍", h: 205, s: 70, keys: ["size", "onaji", "sort", "hazure"] },
+    { name: "いろ・かたち", ico: "🎨", h: 272, s: 58, keys: ["iro", "katachi", "kage", "pattern"] },
+    { name: "かず", ico: "🔢", h: 42, s: 85, keys: ["count", "ooi", "suuji", "numtrace", "tentsunagi"] },
+    { name: "ことば", ico: "💬", h: 340, s: 70, keys: ["kotoba", "onoma", "kimochi", "kotobazukuri"] },
+    { name: "かく", ico: "✏️", h: 150, s: 48, keys: ["nazori", "kana", "kata", "oekaki", "nurie"] },
+    { name: "パズル", ico: "🧩", h: 22, s: 80, keys: ["hame", "eawase", "memory", "meiro"] },
+    { name: "おと・あそび", ico: "🎵", h: 182, s: 55, keys: ["bubble", "balloon", "mokkin", "baa", "koe"] }
   ];
+  var MENU_ORDER = MENU_GROUPS.reduce(function (a, g) { return a.concat(g.keys); }, []);
   // 保護者メニューの記録に出すもの（自由あそびは記録をとらない）
   function recordedKeys() {
     return MENU_ORDER.filter(function (k) { return TASKS[k] || PUZZLES[k] || GAMES[k]; });
   }
   function ageOf(k) { var it = menuItem(k); return (it && it.age) || 2; }
-
-  // メニューのカードの色（面・下のふち）。あそびごとに色で見分けやすくする
-  var TINTS = {
-    size: ["#ffe4e1", "#f3b5ab"], count: ["#fff0d1", "#efcb82"], sort: ["#fff6c4", "#e9d674"],
-    onoma: ["#e8f6da", "#b5da92"], iro: ["#dff0fb", "#9ccbec"], katachi: ["#ece6fb", "#c1b3ee"],
-    onaji: ["#fde4f0", "#eeafcc"], kage: ["#e5e9f3", "#b2bed8"], kimochi: ["#fff0dc", "#f0c592"],
-    kotoba: ["#dcf3ef", "#9dd6ca"], ooi: ["#f4ecdd", "#d7c29d"], hame: ["#f6e8d4", "#dbbd93"],
-    eawase: ["#e3eeff", "#a7c3f1"], bubble: ["#dff5f7", "#a0dbe2"], balloon: ["#ffe3ea", "#f2a8bb"],
-    pattern: ["#e7ecfb", "#b1c0ef"], suuji: ["#fdeede", "#eec79a"], hazure: ["#eef0e2", "#c3caa0"],
-    memory: ["#f0e7fb", "#c8b2ec"], nazori: ["#e2f2ec", "#a4d3c2"], oekaki: ["#fdeaf5", "#efb0d5"],
-    kana: ["#fff2d8", "#eccb88"], kata: ["#e6f0e2", "#b0c9a4"], numtrace: ["#e7eef7", "#a9c0da"],
-    mokkin: ["#fff0e0", "#f1c38e"], baa: ["#fde7ee", "#f0b1c4"], nurie: ["#f7ecfd", "#d9b3e8"],
-    tentsunagi: ["#e8f2ff", "#a9c6ee"], meiro: ["#eef6e0", "#bcd796"], kotobazukuri: ["#fff4dc", "#ecc98a"],
-    koe: ["#ffe6de", "#f1ad97"]
-  };
-
-  // 色（#rrggbb）の 色相 と あざやかさ。カードの明るさは CSS でそろえるので、ここでは使わない。
-  // もともと くすんだ色（かげ・おおい すくない など）は、くすんだまま（あざやかさ 35〜85%）
-  function hueSat(hex) {
-    var r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
-    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, l = (mx + mn) / 2;
-    if (!d) return [30, 35];
-    var h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
-    var s = d / (1 - Math.abs(2 * l - 1));
-    return [Math.round(h * 60), Math.round(Math.max(35, Math.min(85, s * 100)))];
-  }
 
   function menuItem(k) { return TASKS[k] || PUZZLES[k] || GAMES[k] || PLAYS[k]; }
   function icoHTML(it, cls) {
@@ -1976,31 +1966,57 @@
     var g = document.getElementById("menu-grid");
     g.innerHTML = "";
     var shown = 0;
-    MENU_ORDER.forEach(function (k) {
-      if (hidden.indexOf(k) !== -1) return;
-      var it = menuItem(k);
-      var b = document.createElement("button");
-      b.className = "menu-card";
-      b.style.setProperty("--i", shown++); // 順番に出てくるように
-      if (TINTS[k]) {
-        var hs = hueSat(TINTS[k][0]);
-        b.style.setProperty("--h", hs[0]);
-        b.style.setProperty("--s", hs[1] + "%");
-      }
-      b.innerHTML = icoHTML(it, "ico") + '<span class="label">' + it.label + '</span>';
-      b.addEventListener("click", function () {
-        play("tap");
-        if (TASKS[k]) startTask(k);
-        else if (PUZZLES[k]) startPuzzle(k);
-        else if (GAMES[k]) GAMES[k].start();
-        else it.start();
+    MENU_GROUPS.forEach(function (grp) {
+      var keys = grp.keys.filter(function (k) { return hidden.indexOf(k) === -1; });
+      if (!keys.length) return; // ぜんぶ出さない たなは、たなごと出さない
+      var sec = el("section", "menu-sec");
+      sec.style.setProperty("--h", grp.h);
+      sec.style.setProperty("--s", grp.s + "%");
+      sec.style.setProperty("--n", keys.length);
+      sec.innerHTML = '<h2 class="sec-title"><span class="si" aria-hidden="true">' + grp.ico + '</span>' + grp.name + '</h2>';
+      var cards = el("div", "sec-cards");
+      keys.forEach(function (k) {
+        var it = menuItem(k);
+        var b = el("button", "menu-card");
+        b.style.setProperty("--i", shown++); // 順番に出てくるように
+        b.innerHTML = icoHTML(it, "ico") + '<span class="label">' + it.label + '</span>';
+        b.addEventListener("click", function () {
+          play("tap");
+          if (TASKS[k]) startTask(k);
+          else if (PUZZLES[k]) startPuzzle(k);
+          else if (GAMES[k]) GAMES[k].start();
+          else it.start();
+        });
+        cards.appendChild(b);
       });
-      g.appendChild(b);
+      sec.appendChild(cards);
+      g.appendChild(sec);
     });
+    fitMenu();
     if (!g.children.length) {
       g.innerHTML = '<div class="empty">あそびが ありません<br><span class="muted">（右上を3秒おしで 保護者メニュー）</span></div>';
     }
   }
+
+  // iPad の横向きで、たなが1画面に収まる いちばん大きい ます（--cw）を選ぶ。
+  // ます の数を ふやしながら、たなを左から つめて ならべたときの段の数と高さを見て、はじめて収まった数にする
+  var MENU_WIDE = window.matchMedia ? window.matchMedia("(min-width: 1000px) and (orientation: landscape)") : null;
+  function fitMenu() {
+    var g = document.getElementById("menu-grid");
+    if (!MENU_WIDE || !MENU_WIDE.matches) { g.style.removeProperty("--cw"); return; }
+    var ns = Array.prototype.map.call(g.querySelectorAll(".menu-sec"), function (s) { return s.querySelectorAll(".menu-card").length; });
+    if (!ns.length) return;
+    var W = g.clientWidth, H = g.parentNode.clientHeight - 30, GAP = 12, u = 0;
+    for (var C = Math.max.apply(null, ns.concat(4)); C <= 10; C++) {
+      var rows = 1, used = 0;
+      ns.forEach(function (n) { if (used && used + n > C) { rows++; used = 0; } used += n; });
+      u = (W - (C - 1) * GAP) / C;
+      // 1段の高さ：見出しと たなの余白（約43）＋ カード（2行の名前のとき、ますの幅の 1.1倍くらい）
+      if (rows * (43 + u * 1.1) + (rows - 1) * GAP <= H) break;
+    }
+    g.style.setProperty("--cw", Math.floor(u * 10) / 10 + "px");
+  }
+  window.addEventListener("resize", function () { if (current === "menu") fitMenu(); });
 
   /* ============ 課題の進行 ============ */
   var cur = null;
@@ -4504,13 +4520,17 @@
 
     /* --- メニューに出す あそび --- */
     html += "<h2>メニューに出す あそび</h2><div class='panel'>";
-    MENU_ORDER.forEach(function (k) {
+    MENU_GROUPS.forEach(function (grp) {
+      html += "<p class='vis-head'>" + grp.ico + " " + grp.name + "</p>";
+      grp.keys.forEach(function (k) { html += visRow(k); });
+    });
+    function visRow(k) {
       var it = menuItem(k);
-      html += "<label class='edit-row vis-row'><input type='checkbox' data-vis='" + k + "'" +
+      return "<label class='edit-row vis-row'><input type='checkbox' data-vis='" + k + "'" +
               (hidden.indexOf(k) === -1 ? " checked" : "") + ">" +
               icoHTML(it, "grip") + "<span class='nm'>" + it.label +
               "<span class='muted' style='font-size:.8em'>　" + (ageOf(k) >= 4 ? "4さい〜" : "2さい〜") + "</span></span></label>";
-    });
+    }
     html += "<p class='note'>チェックを外すと、子どものメニューに出なくなります（記録は消えません）。<br>" +
             "選ぶものが多すぎて迷うときは、いま取り組んでいるものだけにしぼれます。</p>";
     html += "</div>";
@@ -4558,6 +4578,7 @@
             "・シール：あそびを最後までやると1まいもらえる。ホームの「シール」で、ページにはれる<br>" +
             "・よみあげ：お題を端末の声で読む。お題のラベルをタッチすると もう一度読む<br>" +
             "・iPad の「アクセスガイド」（設定→アクセシビリティ）を使うとアプリから出られなくできる<br>" +
+            "・メニューは種類ごとの たなに分けて並べる（くらべる／いろ・かたち／かず／ことば／かく／パズル／おと・あそび）。iPad の横向きでは1画面に収まる<br>" +
             "・保護者メニューは右上を3秒長押し" +
             "</p></div>";
 
