@@ -156,7 +156,7 @@
   /* もどる：丸い矢印つきの白いボタン（きおく のカードの裏 .mem-face.back とは別） */
   button.back {
     border: none; background: var(--card); color: var(--ink);
-    border-radius: 999px; padding: 7px 22px 7px 7px;
+    border-radius: 999px; padding: 7px 22px 7px 7px; flex: none; white-space: nowrap;
     display: inline-flex; align-items: center; gap: 10px;
     font-size: 1.2rem; font-weight: 800; letter-spacing: .04em; font-family: inherit; cursor: pointer;
     box-shadow: 0 5px 0 var(--edge), 0 10px 18px rgba(120,88,56,.08);
@@ -395,6 +395,63 @@
   .tr-goal { fill: #ffc93c; stroke: #e09a1c; stroke-width: .7; stroke-linejoin: round; }
   @keyframes cursor-pulse { from { scale: .8; } to { scale: 1.2; } }
   .whole .tr-start, .whole .tr-dots { display: none; } /* 書きおわったら 星だけ のこす */
+  /* 文字：いま書いている行（あ行 など）を上に小さく。書いた字は緑、いまの字は オレンジの わく */
+  .tr-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .tr-row span {
+    width: 2.1em; height: 2.1em; border-radius: 12px; display: grid; place-items: center;
+    font-size: 1.15rem; font-weight: 800; color: #b9a98f; background: rgba(255,255,255,.75); box-shadow: 0 3px 0 var(--edge);
+  }
+  .tr-row span.done { color: #fff; background: var(--accent); box-shadow: 0 3px 0 var(--accent-edge); }
+  .tr-row span.now { color: var(--ink); background: #fff; box-shadow: 0 0 0 3px var(--warm), 0 3px 0 var(--edge); }
+  .tr-row span.gap { visibility: hidden; width: .6em; }
+  /* いつでも 押せる「おしまい」（右上は 保護者メニューの長押しの場所なので、右下に置く） */
+  .tr-foot { display: none; justify-content: flex-end; padding: 4px 0 0; }
+  .tr-foot.on { display: flex; }
+  .tr-end { padding: 12px 26px; font-size: 1.25rem; }
+  .tr-end::before { content: "🏁"; margin-right: .4em; }
+  @media (max-height: 700px) { .tr-row span { width: 1.8em; height: 1.8em; font-size: 1rem; } .tr-end { padding: 8px 18px; font-size: 1.05rem; } }
+  @media (max-width: 520px) { .tr-row { gap: 4px; flex-wrap: nowrap; } .tr-row span { width: 1.65em; height: 1.65em; font-size: .95rem; border-radius: 9px; } }
+
+  /* ---------- あいうえお ひょう ---------- */
+  /* むかしからの 五十音表の ならび（あ行が いちばん右で、上から下へ）。すうじ は 横に ならべる。
+     --c：ます1つの大きさ（横幅と高さの どちらにも収まる大きさ） */
+  .hyo-count { font-size: 1.3rem; font-weight: 800; color: var(--ink-soft); padding-right: 70px; }
+  .hyo-wrap { flex: 1; min-height: 0; overflow: auto; display: grid; place-items: center; padding: 4px 0 10px; }
+  .hyo {
+    --g: 8px; --c: min(calc((min(100vw, 1100px) - 130px) / 10), calc((100vh - 340px) / 5), 104px);
+    display: flex; flex-direction: row-reverse; gap: var(--g);
+  }
+  .hyo-col { display: flex; flex-direction: column; gap: var(--g); }
+  .hyo.yoko { flex-direction: column; --c: min(calc((min(100vw, 1100px) - 130px) / 5), calc((100vh - 340px) / 2), 128px); }
+  .hyo.yoko .hyo-col { flex-direction: row; }
+  .hyo-cell {
+    position: relative; width: var(--c); height: var(--c); border: none; padding: 0; border-radius: 22%;
+    font-family: inherit; font-size: calc(var(--c) * .56); font-weight: 800; line-height: 1; color: var(--ink); cursor: pointer;
+    background: linear-gradient(#fff, #fffaf2); box-shadow: inset 0 0 0 2.5px #fbf1e2, 0 4px 0 var(--edge);
+  }
+  .hyo-cell.gap { visibility: hidden; }
+  .hyo-cell:active { transform: translateY(3px); box-shadow: inset 0 0 0 2.5px #fbf1e2, 0 1px 0 var(--edge); }
+  /* 書いた字：緑に はなまる */
+  .hyo-cell.done { color: var(--accent-edge); background: linear-gradient(#f1fbf5, var(--accent-soft)); box-shadow: inset 0 0 0 2.5px #fff, 0 4px 0 #bfe4cf; }
+  .hyo-cell.done::after { content: "💮"; position: absolute; right: -8%; top: -10%; font-size: calc(var(--c) * .34); }
+  .hyo-cell.done.new::after { animation: stk-pop .5s ease-out backwards; animation-delay: var(--d, 0s); }
+  /* つぎに書く字 */
+  .hyo-cell.next { box-shadow: inset 0 0 0 2.5px #fff, 0 0 0 4px var(--warm), 0 4px 0 var(--edge); animation: next-bob 1.2s ease-in-out infinite alternate; }
+  @keyframes next-bob { from { translate: 0 0; } to { translate: 0 -4px; } }
+  .hyo-foot { display: flex; justify-content: center; padding: 6px 0 2px; }
+  .hyo-go { --h: 150; width: auto; padding: 16px 34px; font-size: 1.6rem; }
+  /* スマホのたて向きでは、五十音も 横（あいうえお が横）に ならべる */
+  @media (max-width: 600px) and (orientation: portrait) {
+    .hyo { flex-direction: column; --c: min(calc((100vw - 110px) / 5), calc((100vh - 300px) / 10)); --g: 6px; }
+    .hyo .hyo-col { flex-direction: row; }
+  }
+  /* おしまい画面：書いた字を 星のかわりに ならべる */
+  .stars .fchip {
+    width: calc(var(--k) * 52px); height: calc(var(--k) * 52px); border-radius: 14px; display: grid; place-items: center;
+    font-size: calc(var(--k) * 30px); font-weight: 800; color: #fff; background: var(--accent); box-shadow: 0 4px 0 var(--accent-edge);
+    animation: star-pop .5s ease-out backwards;
+  }
+  .stars.many .fchip { width: calc(var(--k) * 40px); height: calc(var(--k) * 40px); font-size: calc(var(--k) * 23px); border-radius: 11px; }
 
   /* ---------- おえかき ---------- */
   .draw-area { flex: 1; min-height: 0; background: var(--card); border-radius: 26px; box-shadow: 0 6px 0 var(--edge), var(--shadow); overflow: hidden; }
@@ -975,7 +1032,7 @@
     .pz-slot .pz-piece.snap, .sched-item .check.just,
     .mk-key.hit, .mk-key.next .mk-star, .baa-animal.show, .baa-cloth svg, .ts-dot.start, .ts-dot.hint, .ts-dot.nope,
     .mz-goal, .mz-hero.yay text, .kz-pic.yay, .kz-tile.shake, .kz-slot .kz-tile.snap, .stk.pop,
-    .finish-sticker .stk, .koe-emo.pop, .koe-orb.happy .koe-emo, .koe-orb.yay .koe-emo, .koe-bubble, .koe-scene,
+    .finish-sticker .stk, .hyo-cell.next, .hyo-cell.done.new::after, .stars .fchip, .koe-emo.pop, .koe-orb.happy .koe-emo, .koe-orb.yay .koe-emo, .koe-bubble, .koe-scene,
     .kr-zone.lit .kr-emo, .kr-zone.right { animation: none; }
     .balloon { transition: transform .25s ease, opacity .25s ease; }
     .spark, .fnote, .koe-wave { display: none; }
@@ -1075,13 +1132,25 @@
   <!-- なぞり -->
   <section class="screen" id="s-trace">
     <div class="bar">
-      <button class="back" data-go="menu">もどる</button>
+      <button class="back" id="tr-back" data-go="menu">もどる</button>
+      <div class="tr-row" id="tr-row"></div>
       <div class="dots" id="tr-dots"></div>
     </div>
     <div class="scroll task-body" id="tr-body">
       <div class="prompt" id="tr-prompt">ゆびで なぞって</div>
       <div class="trace-area" id="trace-area"></div>
     </div>
+    <div class="tr-foot" id="tr-foot"><button class="pill tr-end" id="tr-end">おしまい</button></div>
+  </section>
+
+  <!-- あいうえお ひょう（文字のなぞりの はじめの画面。書いた字に はなまる） -->
+  <section class="screen" id="s-hyo">
+    <div class="bar">
+      <button class="back" data-go="menu">もどる</button>
+      <div class="hyo-count" id="hyo-count"></div>
+    </div>
+    <div class="hyo-wrap"><div class="hyo" id="hyo"></div></div>
+    <div class="hyo-foot"><button class="big-btn hyo-go" id="hyo-go"></button></div>
   </section>
 
   <!-- おえかき -->
@@ -1225,6 +1294,7 @@
   var KEY_STICKERS = "asobou_stickers_v1"; // もらったシール（はった場所も）
   var KEY_KNOWN = "asobou_known_v1";       // 前に開いたときにあった あそび（新しく増えたものを見分ける）
   var KEY_KOE = "asobou_koe_v1";           // こえの ものさし の きじゅん（保護者メニューで ちょうせい）
+  var KEY_TRACE = "asobou_trace_v1";       // 文字のなぞり：つぎに書く字と、書いた字（あいうえお ひょう の はなまる）
 
   // 以前の名前で保存した記録・スケジュールを引き継ぐ（元のデータは消さない）
   [["dev_log_v1", KEY_LOG], ["dev_sched_v1", KEY_SCHED], ["dev_sched_done_v1", KEY_SCHED_DONE]].forEach(function (p) {
@@ -1566,7 +1636,7 @@
     var ids = {
       home: "s-home", menu: "s-menu", task: "s-task", puzzle: "s-puzzle", pop: "s-pop",
       memory: "s-memory", trace: "s-trace", draw: "s-draw",
-      mokkin: "s-mokkin", baa: "s-baa", nurie: "s-nurie", tentsu: "s-tentsu", maze: "s-maze", word: "s-word", koe: "s-koe",
+      mokkin: "s-mokkin", baa: "s-baa", nurie: "s-nurie", tentsu: "s-tentsu", maze: "s-maze", word: "s-word", koe: "s-koe", hyo: "s-hyo",
       stickers: "s-stickers", finish: "s-finish", sched: "s-sched", parent: "s-parent"
     };
     Object.keys(ids).forEach(function (k) {
@@ -1576,6 +1646,7 @@
     if (name === "sched") renderSched();
     if (name === "parent") renderParent();
     if (name === "stickers") renderStickers();
+    if (name === "hyo") renderHyo();
   }
   document.addEventListener("click", function (e) {
     var t = e.target.closest("[data-go]");
@@ -1898,9 +1969,9 @@
     bubble: { ico: "🫧", label: "しゃぼんだま", start: function () { startPop("bubble"); } },
     balloon: { ico: "🎈", label: "ふうせん", start: function () { startPop("balloon"); } },
     nazori: { ico: "✏️", label: "なぞり", start: function () { startTrace("shape"); } },
-    kana: { ico: '<span class="kana-ico">あ</span>', label: "あいうえお", age: 4, start: function () { startTrace("hira"); } },
-    kata: { ico: '<span class="kana-ico">ア</span>', label: "カタカナ", age: 4, start: function () { startTrace("kata"); } },
-    numtrace: { ico: '<span class="kana-ico">1</span>', label: "すうじ なぞり", age: 4, start: function () { startTrace("num"); } },
+    kana: { ico: '<span class="kana-ico">あ</span>', label: "あいうえお", age: 4, start: function () { startHyo("hira"); } },
+    kata: { ico: '<span class="kana-ico">ア</span>', label: "カタカナ", age: 4, start: function () { startHyo("kata"); } },
+    numtrace: { ico: '<span class="kana-ico">1</span>', label: "すうじ なぞり", age: 4, start: function () { startHyo("num"); } },
     oekaki: { ico: "🖍️", label: "おえかき", start: startDraw },
     mokkin: {
       ico: '<svg class="ico-svg" viewBox="0 0 100 100" aria-hidden="true">' +
@@ -2150,7 +2221,9 @@
   // 最後までやると、シールが1まいもらえる（noSticker：おえかきで何もかかずに「できた」を押したときなど）
   var MASCOTS = ["🐻", "🐰", "🐱", "🐶", "🐼", "🐯", "🦊", "🐥", "🐧", "🐸"];
   var lastMascot = null;
-  function finish(n, noSticker) {
+  // opt.chips：星のかわりに ならべる字（文字のなぞりで 書いた字）、opt.say：「おしまい」のかわりに 読むことば
+  function finish(n, noSticker, opt) {
+    opt = opt || {};
     var m;
     do { m = pick(MASCOTS); } while (m === lastMascot); // 毎回ちがう子が出てくる
     lastMascot = m;
@@ -2158,19 +2231,21 @@
     play("finish");
     var box = document.getElementById("finish-stars");
     box.innerHTML = "";
-    box.classList.toggle("many", n > 5);
-    for (var i = 0; i < n; i++) {
+    var items = opt.chips || [], step = opt.chips ? .06 : .12, count = opt.chips ? items.length : n;
+    box.classList.toggle("many", count > 5);
+    for (var i = 0; i < count; i++) {
       var s = document.createElement("span");
-      s.className = "dot done";
-      s.style.animationDelay = (0.15 + i * 0.12).toFixed(2) + "s";
+      s.className = opt.chips ? "fchip" : "dot done";
+      if (opt.chips) s.textContent = items[i];
+      s.style.animationDelay = (0.15 + i * step).toFixed(2) + "s";
       box.appendChild(s);
     }
     var gift = noSticker ? null : giveSticker();
     document.getElementById("finish-sticker").innerHTML = gift
-      ? '<span class="stk" style="--r:' + gift.r + 'deg;animation-delay:' + (0.3 + n * 0.12).toFixed(2) + 's">' + gift.e + '</span>シール ゲット'
+      ? '<span class="stk" style="--r:' + gift.r + 'deg;animation-delay:' + (0.3 + count * step).toFixed(2) + 's">' + gift.e + '</span>シール ゲット'
       : "";
     go("finish");
-    say("おしまい");
+    say(opt.say || "おしまい");
   }
 
   // 正解・完成・割れたときの、小さな粒（音なし・0.7秒で消える）
@@ -2888,25 +2963,143 @@
   var TRACE_ROUNDS = 3;
   var tr = null;
 
+  // 線の形のなぞり：やさしい→ふつう→むずかしい の順に3つ
   function startTrace(kind) {
     go("trace");
     tr = { kind: kind, i: 0 };
-    if (kind === "shape") {
-      // やさしい→ふつう→むずかしい の順に3つ
-      tr.items = [pick(TRACE_EASY), pick(TRACE_MID), pick(TRACE_HARD)].map(function (d) { return { strokes: [d] }; });
-    } else {
-      // 文字：五十音の並びで となり合う3文字（「あ・い・う」のように まとめて練習できる）
-      var list = LETTERS[kind];
-      var s = Math.floor(Math.random() * list.length);
-      tr.items = [0, 1, 2].map(function (k) { return list[(s + k) % list.length]; });
-    }
+    tr.items = [pick(TRACE_EASY), pick(TRACE_MID), pick(TRACE_HARD)].map(function (d) { return { strokes: [d] }; });
+    document.getElementById("tr-back").setAttribute("data-go", "menu");
+    document.getElementById("tr-foot").classList.remove("on");
     nextTrace();
   }
 
+  /* --- 文字のなぞり（あいうえお ひょう） --- */
+  // 文字は 五十音の順に、1字ずつ つづけて書く。いつでも「おしまい」で終われて、つぎは その字から。
+  // はじめに ひょう が出て、書いた字には はなまる。ひょうの字を押すと、その字から書ける
+  var traceLog = load(KEY_TRACE, {});
+  // 五十音表の ならび（行ごと。空白は あき）
+  var HYO = {
+    hira: ["あいうえお", "かきくけこ", "さしすせそ", "たちつてと", "なにぬねの", "はひふへほ", "まみむめも", "や ゆ よ", "らりるれろ", "わ を ん"],
+    kata: ["アイウエオ", "カキクケコ", "サシスセソ", "タチツテト", "ナニヌネノ", "ハヒフヘホ", "マミムメモ", "ヤ ユ ヨ", "ラリルレロ", "ワ ヲ ン"],
+    num: [["1", "2", "3", "4", "5"], ["6", "7", "8", "9", "10"]]
+  };
+  var HYO_NAME = { hira: "ひらがな", kata: "カタカナ", num: "すうじ" };
+  var hyoKind = "hira";
+  var hyoNew = []; // さっき書いた字（ひょうに もどったとき、はなまるを ぽんと出す）
+
+  function hyoRows(kind) {
+    return HYO[kind].map(function (r) {
+      return typeof r === "string" ? r.split("").map(function (c) { return c === " " ? null : c; }) : r;
+    });
+  }
+  function letterIndex(kind, ch) {
+    for (var i = 0; i < LETTERS[kind].length; i++) if (LETTERS[kind][i].ch === ch) return i;
+    return -1;
+  }
+  // 保存した記録（こわれていたら 直す）：next＝つぎに書く字の番号、done＝書いたことのある字
+  function traceRec(kind) {
+    var r = traceLog[kind];
+    if (!r || typeof r !== "object" || Array.isArray(r)) r = traceLog[kind] = {};
+    if (typeof r.next !== "number" || !(r.next >= 0 && r.next < LETTERS[kind].length)) r.next = 0;
+    r.done = (Array.isArray(r.done) ? r.done : []).filter(function (c) { return letterIndex(kind, c) !== -1; });
+    return r;
+  }
+
+  function startHyo(kind) {
+    hyoKind = kind;
+    hyoNew = [];
+    go("hyo");
+  }
+
+  function renderHyo() {
+    var kind = hyoKind, rec = traceRec(kind), list = LETTERS[kind];
+    var box = document.getElementById("hyo");
+    box.className = "hyo" + (kind === "num" ? " yoko" : "");
+    box.innerHTML = hyoRows(kind).map(function (row) {
+      return '<div class="hyo-col">' + row.map(function (c) {
+        if (c === null) return '<span class="hyo-cell gap"></span>';
+        var i = letterIndex(kind, c), nw = hyoNew.indexOf(c);
+        return '<button class="hyo-cell' + (rec.done.indexOf(c) !== -1 ? " done" : "") + (nw !== -1 ? " new" : "") +
+               (i === rec.next ? " next" : "") + '" data-i="' + i + '"' +
+               (nw !== -1 ? ' style="--d:' + (nw * .08).toFixed(2) + 's"' : "") + '>' + c + '</button>';
+      }).join("") + '</div>';
+    }).join("");
+    hyoNew = [];
+    document.getElementById("hyo-count").textContent = rec.done.length + " / " + list.length;
+    document.getElementById("hyo-go").innerHTML = '<span class="ico">✏️</span>「' + list[rec.next].ch + '」から かく';
+    say(list[rec.next].ch + " から かこう");
+  }
+  document.getElementById("hyo").addEventListener("click", function (e) {
+    var b = e.target.closest(".hyo-cell");
+    if (!b || b.classList.contains("gap")) return;
+    play("tap");
+    beginLetters(hyoKind, +b.getAttribute("data-i"));
+  });
+  document.getElementById("hyo-go").addEventListener("click", function () {
+    play("tap");
+    beginLetters(hyoKind, traceRec(hyoKind).next);
+  });
+
+  function beginLetters(kind, idx) {
+    go("trace");
+    tr = { kind: kind, letters: true, idx: idx, written: [], i: 0 };
+    document.getElementById("tr-back").setAttribute("data-go", "hyo"); // もどると ひょうへ（書いた字に はなまる）
+    document.getElementById("tr-foot").classList.add("on");
+    nextTrace();
+  }
+
+  // いま書いている行（あ行 など）を上に出す。書いた字は緑、いまの字は わく
+  function drawRow() {
+    var box = document.getElementById("tr-row");
+    if (!tr || !tr.letters) { box.innerHTML = ""; return; }
+    var list = LETTERS[tr.kind], rec = traceRec(tr.kind), end = tr.idx >= list.length;
+    var cur = list[Math.min(tr.idx, list.length - 1)].ch;
+    var row = hyoRows(tr.kind).filter(function (r) { return r.indexOf(cur) !== -1; })[0] || [];
+    box.innerHTML = row.map(function (c) {
+      if (c === null) return '<span class="gap"></span>';
+      return '<span class="' + (c === cur && !end ? "now" : rec.done.indexOf(c) !== -1 ? "done" : "") + '">' + c + '</span>';
+    }).join("");
+  }
+
+  // 1字 書けた：はなまるを つけて、つぎの字へ（さいごの字の つぎは、はじめから）
+  function letterDone() {
+    var list = LETTERS[tr.kind], rec = traceRec(tr.kind), ch = list[tr.idx].ch;
+    if (rec.done.indexOf(ch) === -1) rec.done.push(ch);
+    tr.written.push(ch);
+    hyoNew.push(ch);
+    tr.idx++;
+    rec.next = tr.idx % list.length;
+    save(KEY_TRACE, traceLog);
+    drawRow();
+  }
+
+  // おしまい：書いた字を ならべて見せる（3字より少ないときは シールなし。1字も書いていなければ ひょうに もどる）
+  function lettersFinish(end) {
+    var w = tr.written, rec = traceRec(tr.kind);
+    if (!w.length) { go("hyo"); return; }
+    var words = rec.done.length === LETTERS[tr.kind].length && end ? "ぜんぶ かけたね" : end ? "さいごまで かけたね" : null;
+    finish(w.length, w.length < 3, { chips: w.slice(), say: words });
+  }
+  document.getElementById("tr-end").addEventListener("click", function () {
+    if (!tr || !tr.letters) return;
+    play("tap");
+    lettersFinish(false);
+  });
+
   function nextTrace() {
-    if (tr.i >= TRACE_ROUNDS) { finish(TRACE_ROUNDS); return; }
-    drawDots("tr-dots", TRACE_ROUNDS, tr.i);
-    var item = tr.items[tr.i];
+    var item;
+    if (tr.letters) {
+      item = LETTERS[tr.kind][tr.idx];
+      tr.items = [item]; // 下の処理は tr.items[tr.i] を見る
+      tr.i = 0;
+      document.getElementById("tr-dots").innerHTML = "";
+      drawRow();
+    } else {
+      if (tr.i >= TRACE_ROUNDS) { finish(TRACE_ROUNDS); return; }
+      drawDots("tr-dots", TRACE_ROUNDS, tr.i);
+      document.getElementById("tr-row").innerHTML = "";
+      item = tr.items[tr.i];
+    }
     document.getElementById("tr-prompt").textContent = item.ch ? item.ch + " なぞって" : "ゆびで なぞって";
     say(document.getElementById("tr-prompt").textContent);
     // w：線の太さ（数、または 画の番号から太さを返す関数）
@@ -3072,7 +3265,13 @@
     tr.svg.classList.add("whole");
     burst(tr.goal, 12);
     play("right");
-    later(function () { tr.i++; nextTrace(); }, 1100);
+    // 文字は 書けたら すぐ記録する（つぎの字へ うつる前に もどっても、はなまるが つく）
+    if (tr.letters) letterDone();
+    later(function () {
+      if (!tr.letters) { tr.i++; nextTrace(); return; }
+      if (tr.idx >= LETTERS[tr.kind].length) lettersFinish(true); // さいごの字まで 書けた
+      else nextTrace();
+    }, 1100);
   }
 
   /* --- おえかき（自由あそび・記録なし） --- */
@@ -4508,6 +4707,19 @@
             "まだ持っていない絵から出ます。ホームの「シール」で、ページにはったり、うごかしたりできます。</p>";
     html += "</div>";
 
+    /* --- あいうえお ひょう --- */
+    html += "<h2>あいうえお ひょう</h2><div class='panel'>";
+    ["hira", "kata", "num"].forEach(function (k) {
+      var r = traceRec(k);
+      html += "<div class='edit-row'><span class='nm'>" + HYO_NAME[k] + "：" + r.done.length + " / " + LETTERS[k].length +
+              " もじ<span class='muted' style='font-size:.85em'>　つぎは「" + LETTERS[k][r.next].ch + "」</span></span>" +
+              "<button class='mini warn' data-hyo-reset='" + k + "'>リセット</button></div>";
+    });
+    html += "<p class='note'>あいうえお・カタカナ・すうじ なぞり は、ひょうから はじめて、五十音の順に1字ずつ つづけて書きます。" +
+            "いつでも右下の「おしまい」で終われて、つぎは その字から。書いた字には ひょうで はなまるが つきます（3字以上 書いて おしまいにすると シール）。<br>" +
+            "リセットすると はなまるが消えて、はじめの字からに なります。</p>";
+    html += "</div>";
+
     /* --- あそぶ子に合わせる --- */
     html += "<h2>あそぶ子に合わせる</h2><div class='panel'>";
     html += "<div class='row'><button class='mini" + (easy ? "" : " ghost") + "' data-preset='young'>2〜3さい</button>" +
@@ -4560,7 +4772,7 @@
             "・なぞり／あいうえお／おえかきは記録なし。ゆびが少しずれても進むので、小さい子でも最後まで行ける<br>" +
             "・なぞりは「よこ線→なみ→うずまき」のように、やさしい順で3つ<br>" +
             "・あいうえお／カタカナ／すうじ なぞり は、お手本の字をそのまま出し、書く順に1画ずつ、なぞったところが緑になる。いまの画の上に点がならび、書きはじめは番号の丸、おわりは星。まだなぞっていない画には緑がはみ出さない。" +
-            "五十音の並びでとなり合う3文字が出る（あ・い・う → か・き・く…）<br>" +
+            "はじめに あいうえお ひょう が出て、五十音の順に1字ずつ つづけて書く（ひょうの字を押すと その字から）。いつでも右下の「おしまい」で終われて、つぎは その字から。書いた字は ひょうに はなまる<br>" +
             "・パズルは1回3つで、ピースが2→3→4と増える。ちがう場所に置くと戻るだけで、1回まちがえるとそのピースと正しい場所に枠が出る。" +
             "指で動かすほか、ピースをタップ→置く場所をタップ でも置ける<br>" +
             "・同じ答えは続けて出さない（2通りしかない課題は3回続けない）。正解の場所も3回続けて同じにしない<br>" +
@@ -4648,6 +4860,15 @@
       document.getElementById("cal-d1").value = koeCal.d1;
       document.getElementById("cal-d2").value = koeCal.d2;
       document.getElementById("cal-now").textContent = calNow();
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-hyo-reset]"), function (b) {
+      b.addEventListener("click", function () {
+        var k = b.getAttribute("data-hyo-reset");
+        if (!confirm(HYO_NAME[k] + " の はなまるを ぜんぶ消して、はじめの字から にします。よろしいですか？")) return;
+        traceLog[k] = { next: 0, done: [] };
+        save(KEY_TRACE, traceLog);
+        renderParent();
+      });
     });
     document.getElementById("clear-stk").addEventListener("click", function () {
       if (confirm("もらったシールを すべて消します。よろしいですか？")) {
