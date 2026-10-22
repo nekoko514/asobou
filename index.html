@@ -1601,11 +1601,21 @@
     return (2 + Math.min(.94, (lv - t[1]) / w)) / 3;
   }
   function ease(v, to, dt, tau) { return v + (to - v) * (1 - Math.exp(-dt / tau)); }
-  // 声の大きさを なめらかにする。j：できたかを見る用（すばやい）、d：はりの表示用（ゆっくり下がる）
+  // 声の大きさを なめらかにする。j：できたかを見る用（すばやい）、d：はりの表示用。
+  // 表示は、ことばの 音と音の すきまで はりが 0 まで落ちて また はね上がらないよう、大きいところを 0.26秒 たもってから 下げる
   function meterStep(m, db, dt) {
     if (db === null) db = -120;
     m.j = ease(m.j, db, dt, db > m.j ? 15 : 40);
-    m.d = ease(m.d, db, dt, db > m.d ? 40 : 200);
+    if (db >= m.d) { m.d = ease(m.d, db, dt, 100); m.hold = 260; }
+    else if ((m.hold = (m.hold || 0) - dt) <= 0) m.d = ease(m.d, db, dt, 260);
+  }
+  // 光る所（ちいさい・ふつう・おおきい）は、ちがう所に 少しのあいだ（0.25秒。しーん は 0.4秒）いたときだけ かえる
+  function steadyBand(st, b, dt) {
+    if (b === st.b) { st.c = b; st.t = 0; return st.b; }
+    if (b !== st.c) { st.c = b; st.t = 0; }
+    st.t += dt;
+    if (st.t >= (b < 0 ? 400 : 250)) { st.b = b; st.t = 0; }
+    return st.b;
   }
   // ものさし（3つの所 ＋ はり）。こえの ものさし と 保護者メニューの ちょうせい で使う
   var KOE_LV = [
@@ -4181,7 +4191,7 @@
 
   function startKoe() {
     go("koe");
-    koe = { mode: null, mic: "wait", stall: false, m: { j: -120, d: -120 }, i: 0, q: null, step: null, last: [], waveAt: 0, band: -2 };
+    koe = { mode: null, mic: "wait", stall: false, m: { j: -120, d: -120 }, sb: { b: -1 }, i: 0, q: null, step: null, last: [], waveAt: 0, band: -2 };
     var pills = document.getElementById("koe-pills");
     pills.innerHTML = "";
     KOE_MODES.forEach(function (md) {
@@ -4351,7 +4361,7 @@
     if (!koe || current !== "koe") return;
     if (stalled !== koe.stall) { koe.stall = stalled; koeMsg(); }
     meterStep(koe.m, muted ? null : db, dt);
-    var b = koeBand(koe.m.d), picking = koe.step === "pick" || koe.step === "picked";
+    var b = steadyBand(koe.sb, koeBand(koe.m.d), dt), picking = koe.step === "pick" || koe.step === "picked";
     rulerSet(koe.r, picking ? 0 : koePos(koe.m.d), picking ? -1 : b);
     if (!koe.orb) return;
     if (koe.mode === "free") koeFree(b);
@@ -4630,7 +4640,7 @@
     return "いまの きじゅん：" + (koeCal.base === null ? "おまかせ（まわりの静かさから決めています）" : "ちょうせいずみ（はかった ふつうの声）");
   }
   function calListen() {
-    calM = { m: { j: -120, d: -120 }, rec: null };
+    calM = { m: { j: -120, d: -120 }, sb: { b: -1 }, rec: null };
     var st = document.getElementById("cal-st"), go1 = document.getElementById("cal-go");
     st.textContent = "マイクを じゅんびしています…（はじめてのときは「許可」を押してください）";
     go1.disabled = true;
@@ -4647,7 +4657,7 @@
     var r = document.getElementById("cal-ruler");
     if (current !== "parent" || !calM || !r) return;
     meterStep(calM.m, muted ? null : db, dt);
-    rulerSet(r, koePos(calM.m.d), koeBand(calM.m.d));
+    rulerSet(r, koePos(calM.m.d), steadyBand(calM.sb, koeBand(calM.m.d), dt));
     var rec = calM.rec, st = document.getElementById("cal-st");
     if (!rec || muted) return;
     rec.t += dt;
