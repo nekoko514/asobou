@@ -381,6 +381,10 @@
   .whole .g-base { fill: var(--accent); }
   .on-letter .tr-track { stroke: transparent; }
   .tr-cover { fill: none; stroke: #ebe1cf; stroke-linecap: round; stroke-linejoin: round; } /* 字と同じ色 */
+  /* いまの画の まだ なぞっていない所も もどす（9 の丸と たて線、6・8 のように、同じ画の中で 近くを通るとき）。
+     そこと、真ん中の線は、はしを まるくしない（書きはじめが ほかの画の上にあるとき、はみ出さないように） */
+  .tr-cover.rest, .tr-core { stroke-linecap: butt; }
+  .whole .tr-cover { display: none; }
   .kana-ico { font-weight: 800; }
   /* いまなぞる線の上に ならべる点。書きはじめは 番号の丸、おわりは 星。なぞると 点は消えて 緑がのびる。
      つぎに ゆびを持っていく点が ぴょこぴょこ光る（書きはじめる前は 番号の丸が光る） */
@@ -392,7 +396,8 @@
   .tr-start:not(.go) { opacity: 0; } /* なぞりはじめたら消す（あとで通る道に かさならないように） */
   .tr-start circle { fill: var(--warm); stroke: #fff; stroke-width: 1.1; }
   .tr-start text { fill: #fff; font-size: 5.2px; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
-  .tr-goal { fill: #ffc93c; stroke: #e09a1c; stroke-width: .7; stroke-linejoin: round; }
+  .tr-goal { fill: #ffc93c; stroke: #e09a1c; stroke-width: .7; stroke-linejoin: round; transition: opacity .3s ease; }
+  .tr-goal.wait { opacity: 0; }
   @keyframes cursor-pulse { from { scale: .8; } to { scale: 1.2; } }
   .whole .tr-start, .whole .tr-dots { display: none; } /* 書きおわったら 星だけ のこす */
   /* 文字：いま書いている行（あ行 など）を上に小さく。書いた字は緑、いまの字は オレンジの わく */
@@ -3138,6 +3143,37 @@
       p.style.strokeDasharray = l + " " + (l + 50);
       p.style.strokeDashoffset = l;
     });
+    // 書きはじめ・書きおわりが ほかの画の中にあるとき（4 の上・5 の かど など）、そこは ほかの画とも重なる所なので、
+    // 真ん中の線（tr-core）では ぬらない（重なる画を書いたときに 緑になる）。_s0・_s1：はじめ・おわりで ぬらない長さ
+    if (item.ch) {
+      var tks = tr.svg.querySelectorAll(".tr-track"), samp = [];
+      Array.prototype.forEach.call(tks, function (t) {
+        var L = t.getTotalLength(), a = [];
+        for (var s = 0; s <= L; s += 1) a.push(t.getPointAtLength(s));
+        samp.push({ L: L, pts: a, el: t });
+      });
+      var inOther = function (k, p) {
+        for (var j = 0; j < samp.length; j++) {
+          if (j === k) continue;
+          var r = ((item.t && item.t[j]) || item.w || 12) / 2 + .5;
+          for (var q = 0; q < samp[j].pts.length; q++) {
+            var dx = samp[j].pts[q].x - p.x, dy = samp[j].pts[q].y - p.y;
+            if (dx * dx + dy * dy < r * r) return true;
+          }
+        }
+        return false;
+      };
+      Array.prototype.forEach.call(tr.svg.querySelectorAll(".tr-core"), function (c, k) {
+        var S = samp[k], s0 = 0, s1 = 0;
+        while (s0 < S.L * .4 && inOther(k, S.el.getPointAtLength(s0))) s0 += .5;
+        while (s1 < S.L * .4 && inOther(k, S.el.getPointAtLength(S.L - s1))) s1 += .5;
+        c._s0 = s0;
+        c._s1 = s1;
+        c._L = S.L;
+        c.style.strokeDashoffset = 0;
+        c.style.strokeDasharray = "0 " + (S.L + 50); // まだ ぬらない
+      });
+    }
     tr.dotsEl = tr.svg.querySelector(".tr-dots");
     tr.goal = tr.svg.querySelector(".tr-goal");
     tr.start = tr.svg.querySelector(".tr-start");
@@ -3190,12 +3226,18 @@
     var n = Math.max(6, Math.min(18, Math.round(len / 14)));
     var pts = [];
     for (var i = 0; i <= n; i++) pts.push(track.getPointAtLength(len * i / n));
-    // 緑の線（文字は 太い線と 真ん中の線の2本）。まだ なぞらない画だけ、上から字の色で もどす
-    tr.doneEl = [tr.svg.querySelectorAll(".tr-done:not(.tr-core)")[tr.s]];
-    var core = tr.svg.querySelectorAll(".tr-core")[tr.s];
-    if (core) tr.doneEl.push(core);
+    // 緑の線（文字は 太い線と 真ん中の線の2本）。まだ なぞらない所だけ、上から字の色で もどす
+    tr.doneEl = tr.svg.querySelectorAll(".tr-done:not(.tr-core)")[tr.s];
+    tr.coreEl = tr.svg.querySelectorAll(".tr-core")[tr.s] || null;
+    // いまの画は、なぞったところから先だけを もどす（strokeDashoffset を traceMove で のばす）
+    tr.coverEl = null;
     Array.prototype.forEach.call(tr.svg.querySelectorAll(".tr-cover"), function (c, i) {
-      c.style.display = i > tr.s ? "" : "none";
+      c.style.display = i < tr.s ? "none" : "";
+      c.classList.toggle("rest", i === tr.s);
+      if (i !== tr.s) return;
+      c.style.strokeDasharray = len + " " + (len + 50);
+      c.style.strokeDashoffset = 0;
+      tr.coverEl = c;
     });
     tr.track = track;
     tr.pts = pts;
@@ -3216,6 +3258,13 @@
     tr.dots = tr.dotsEl.querySelectorAll(".tr-dot");
     tr.goal.setAttribute("transform", "translate(" + pts[n].x.toFixed(2) + " " + pts[n].y.toFixed(2) + ")");
     tr.start.setAttribute("transform", "translate(" + pts[0].x.toFixed(2) + " " + pts[0].y.toFixed(2) + ")");
+    // ぐるっと まわって もどる線（6・8・0 など）は、おわりの星が はじめのほうで通る所の近くにある。
+    // 星を目ざして近道しないよう、その所を通りすぎるまで 星は出さない
+    tr.starWait = 0;
+    for (var s2 = 0; s2 < len - 15; s2++) {
+      var q = track.getPointAtLength(s2);
+      if (Math.hypot(q.x - pts[n].x, q.y - pts[n].y) < 10) tr.starWait = s2;
+    }
     // 文字は 書く順の番号を入れる（線の形のなぞりは 番号なし）
     tr.start.querySelector("text").textContent = tr.items[tr.i].ch ? tr.s + 1 : "";
     markDots();
@@ -3231,6 +3280,19 @@
       tr.dots[i].classList.toggle("next", i === next && tr.at > 0);
     }
     tr.start.classList.toggle("go", tr.at === 0);
+    tr.goal.classList.toggle("wait", tr.len * f <= tr.starWait && tr.starWait > 0);
+  }
+
+  // いまの画を、はじめから p（長さ）まで 緑にする。文字は 真ん中の線（はじめ・おわりの重なる所は のぞく）と、
+  // まだの所を もどす線も いっしょに のばす
+  function paintTo(p) {
+    tr.doneEl.style.strokeDashoffset = tr.len - p;
+    var c = tr.coreEl;
+    if (c) {
+      var vis = Math.max(0, Math.min(p, c._L - c._s1) - c._s0);
+      c.style.strokeDasharray = "0 " + c._s0.toFixed(2) + " " + vis.toFixed(2) + " " + (c._L + 50).toFixed(0);
+    }
+    if (tr.coverEl) tr.coverEl.style.strokeDashoffset = -p;
   }
 
   // ゆびが次の点に近づいたら、そこまで線がのびる（少しずれても進むので、小さい子でもできる）
@@ -3249,7 +3311,7 @@
     var dx = p.x - next.x, dy = p.y - next.y;
     if (Math.sqrt(dx * dx + dy * dy) > 11) return;
     tr.at++;
-    tr.doneEl.forEach(function (p) { p.style.strokeDashoffset = tr.len * (1 - tr.at / tr.n); });
+    paintTo(tr.len * tr.at / tr.n);
     note(tr.at - 1); // 進むほど音が高くなる
     markDots();
     if (tr.at < tr.n) return;
